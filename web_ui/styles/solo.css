@@ -1,0 +1,67 @@
+html {
+	width: 800px;
+	height: 480px;
+	background-color: black;
+	overflow: hidden;
+}
+
+#header {
+	position: fixed;
+	left: 0px;
+	top: 0px;
+	width: 100%;
+	height: 40px;
+}
+
+#name {
+	width: 100%;
+	font-weight: bold;
+}
+
+#alert {
+	position: fixed;
+	left: 0px;
+	bottom: 390px;
+	width: 100%;
+	display: none;
+}
+
+#footer {
+	position: fixed;
+	left: 0px;
+	bottom: 0px;
+	width: 100%;
+	height: 42px;
+}
+
+#body {
+	position: fixed;
+	left: 0px;
+	top: 40px;
+	width: 100%;
+	height: 398px; /* 480 - 40 - 42 = */
+}
+
+#list {
+	display: none;
+}
+
+#editor {
+	width: 100%;
+	height: 100%;
+}
+
+#content {
+	width: 100%;
+	height: 100%;
+	padding: 10px;
+    resize: none;
+    outline: none;
+    border: none;
+    font-family: Verdana;
+    font-size: 14pt;
+}
+
+.fa {
+	margin-right: 0.5em;
+}

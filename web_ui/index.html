@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>SoloWriter</title>
+		<link rel="stylesheet" type="text/css" href="styles/bootstrap.min.css">
+		<link rel="stylesheet" type="text/css" href="styles/font-awesome.min.css">
+		<link rel="stylesheet" type="text/css" href="styles/solo.css">
+		<script type="text/javascript" src="scripts/jquery-3.1.0.min.js"></script>
+		<script type="text/javascript" src="scripts/server_store.js"></script>
+		<script type="text/javascript" src="scripts/solo.js"></script>
+	</head>
+	<body>
+		<div id="header">
+			<input id="name" type="text" class="form-control" placeholder="Enter name..."></input>
+		</div>
+		<div id="body">
+			<div id="editor">
+				<textarea id="content" placeholder="Enter text..."></textarea>
+			</div>
+			<div id="list">
+				<table class="table table-hover table-condensed">
+					<thead>
+						<tr>
+							<th>#</th>
+							<th>Name</th>
+							<th>Modified</th>
+							<th>Size</th>
+						</tr>
+					</thead>
+					<tbody id="list-rows">
+					</tbody>
+				</table>
+			</div>
+		</div>
+		<div id="alert" class="alert alert-danger" role="alert">
+		</div>
+		<div id="footer">
+			<div class="pull-left">
+				<a id="new" class="btn btn-primary navbar-btn" role="button" href="javascript:editor.reset();"><i class="fa fa-star-o"></i>New</a>
+				<a id="open" class="btn btn-success navbar-btn" role="button" href="javascript:editor.open();"><i class="fa fa-folder-open-o"></i>Open</a>
+				<a id="save" class="btn btn-success navbar-btn" role="button" href="javascript:editor.save();"><i class="fa fa-floppy-o"></i>Save</a>
+				<a id="remove" class="btn btn-danger navbar-btn" role="button" href="javascript:editor.remove();"><i class="fa fa-trash"></i>Delete</a>
+			</div>
+			<div class="pull-right">
+				<a id="reload" class="btn btn-warning navbar-btn" role="button" href="."><i class="fa fa-refresh"></i>Refresh</a>
+				<a id="quit" class="btn btn-warning navbar-btn" role="button" href="/api/quit"><i class="fa fa-power-off"></i>Quit</a>
+				<a id="shutdown" class="btn btn-warning navbar-btn" role="button" href="/api/shutdown"><i class="fa fa-power-off"></i>Power Off</a>
+			</div>
+		</div>
+	</body>
+</html>
