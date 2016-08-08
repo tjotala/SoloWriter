@@ -1,96 +1,99 @@
-function Document(name, content, modified) {
-	return {
-		"name": name || "",
-		"content": content || "",
-		"modified": modified || new Date()
+var app = angular.module('App', []);
+
+app.controller('DocumentStore', function DocumentStore($scope, $http) {
+	$scope.list = function() {
+		$http.get("/api/files/").then(
+			function success(response) {
+				$scope.docs = response.data;
+			},
+			function failure(response) {
+				$scope.docs = [ ];
+			}
+		);
 	};
-}
 
-function Editor(store) {
-	var self = this;
+	$scope.get = function(name) {
+		$http.get("/api/files/" + encodeURIComponent(name)).then(
+			function success(response) {
+				$scope.name = name;
+				$scope.content = response.data;
+				$scope.size = response.headers("Content-Length");
+				$scope.modified = new Date(Date.parse(response.headers("Last-Modified")));
+				$scope.dirty = false;
+				$scope.close();
+				$scope.setFocus("content");
+			},
+			function failure(response) {
+				$scope.reset();
+			}
+		);
+	};
 
-	this.store = store;
+	$scope.set = function(name, content) {
+		$http.put("/api/files/" + encodeURIComponent($scope.doc.name), $scope.doc.content).then(
+			function success(response) {
+			},
+			function failure(response) {
+				$scope.reset();
+			}
+		);
+	};
 
-	this.load = function(doc) {
-		$("#list").hide();
-		$("#editor").show();
-		$("#name").val(doc.name);
-		$("#content").val(doc.content);
-		self.refreshButtons();
+	$scope.remove = function(name) {
+		$http.delete("/api/files/" + encodeURIComponent(name)).then(
+			function success(response) {
+			},
+			function failure(response) {
+				$scope.reset();
+			}
+		);
+	};
+
+	$scope.setDirty = function() {
+		$scope.dirty = true;
+	};
+
+	$scope.setFocus = function(id) {
+		window.document.getElementById(id).focus();
+	};
+
+	$scope.reset = function() {
+		$scope.name = undefined;
+		$scope.content = undefined;
+		$scope.size = undefined;
+		$scope.modified = undefined;
+		$scope.dirty = false;
+		$scope.close();
+		$scope.setFocus("content");
+	};
+
+	$scope.open = function() {
+		$scope.opening = true;
+		$scope.list();
+	};
+
+	$scope.close = function() {
+		$scope.opening = false;
+		$scope.docs = [ ];
+		$scope.setFocus("content");
 	}
 
-	this.save = function() {
-		var doc = new Document($("#name").val(), $("#content").val());
-		store.set(doc, function(flag, status, data) { });
-	}
+	$scope.save = function() {
+		$scope.list();
+	};
 
-	this.reset = function() {
-		self.load(new Document());
-	}
+	$scope.reload = function() {
+		window.location.reload();
+	};
 
-	this.open = function() {
-		$("#list-rows").empty();
-		$("#editor").hide();
-		$("#list").show();
+	$scope.quit = function() {
+		$http.get("/api/quit");
+	};
 
-		var elem = function(tag) { return $("<" + tag + "></" + tag + ">"); }
-		var td = function(txt) { return elem("td").text(txt); }
+	$scope.shutdown = function() {
+		$http.get("/api/shutdown");
+	};
 
-		var i = 0;
-		store.list(function(flag, status, data) {
-			$.each(data, function(i, doc) {
-				console.log("document " + i + ": " + doc);
-				var item = elem("tr");
-				item.click(function() {
-					store.get(doc.name, function(flag, status, data) {
-						self.load(data);
-					});
-				});
-				var index = td(++i);
-				var name = td(doc.name);
-				var modified = td(doc.modified.toLocaleString());
-				var size = td(doc.size);
-				item.append(index, name, modified, size);
-				$("#list-rows").append(item);
-			});
-		});
-	}
-
-	this.remove = function() {
-		store.remove($("#name").val(), function(flag, status, data) {
-			self.reset();
-		});
-	}
-
-	this.isEditKey = function(keyCode) {
-		switch (keyCode) {
-			case 37: // left
-			case 38: // up
-			case 39: // right
-			case 40: // down
-				return false;
-		}
-		return true;
-	}
-
-	this.refreshButtons = function() {
-		var hasName = ($("#name").val() != "");
-		$("#save").toggleClass("active", hasName).toggleClass("disabled", !hasName);
-		$("#remove").toggleClass("active", hasName).toggleClass("disabled", !hasName);
-	}
-
-	$("#name").on("change cut paste keyup", function() {
-		self.refreshButtons();
-	});
-
-	self.refreshButtons();
-}
-
-var store = undefined;
-var editor = undefined;
-
-$(document).ready(function() {
-	store = new DocumentStore();
-	editor = new Editor(store);
-	editor.reset();
+	$scope.docs = [ ];
+	$scope.reset();
 });

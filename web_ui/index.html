@@ -1,50 +1,57 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" ng-app="App">
 	<head>
 		<title>SoloWriter</title>
 		<link rel="stylesheet" type="text/css" href="styles/bootstrap.min.css">
 		<link rel="stylesheet" type="text/css" href="styles/font-awesome.min.css">
 		<link rel="stylesheet" type="text/css" href="styles/solo.css">
-		<script type="text/javascript" src="scripts/jquery-3.1.0.min.js"></script>
-		<script type="text/javascript" src="scripts/server_store.js"></script>
+		<script type="text/javascript" src="scripts/angular.min.js"></script>
 		<script type="text/javascript" src="scripts/solo.js"></script>
 	</head>
-	<body>
-		<div id="header">
-			<input id="name" type="text" class="form-control" placeholder="Enter name..."></input>
+	<body ng-controller="DocumentStore">
+		<div id="alert" class="alert alert-danger" role="alert">
 		</div>
 		<div id="body">
-			<div id="editor">
-				<textarea id="content" placeholder="Enter text..."></textarea>
-			</div>
-			<div id="list">
-				<table class="table table-hover table-condensed">
+			<div id="list" ng-show="opening">
+				<i id="cancel" class="fa fa-close" ng-click="close()"></i>
+				<table class="table table-condensed" ng-if="docs.length > 0">
 					<thead>
 						<tr>
-							<th>#</th>
 							<th>Name</th>
 							<th>Modified</th>
 							<th>Size</th>
 						</tr>
 					</thead>
 					<tbody id="list-rows">
+						<tr ng-repeat="doc in docs | orderBy: 'name'" ng-model="doc" ng-click="get(doc.name)">
+							<td>{{doc.name}}</td>
+							<td>{{doc.modified | date: 'medium' }}</td>
+							<td>{{doc.size}}</td>
+							<td><i class="fa fa-trash" ng-click="remove(doc.name)"></i></td>
+						</tr>
 					</tbody>
 				</table>
+				<div class="alert alert-warning" role="alert" ng-if="docs.length == 0">
+					No saved files!
+				</div>
 			</div>
-		</div>
-		<div id="alert" class="alert alert-danger" role="alert">
+			<div id="editor" ng-hide="opening">
+				<textarea id="content" ng-attr-placeholder="Enter text..." ng-model="content" ng-change="setDirty()"></textarea>
+			</div>
 		</div>
 		<div id="footer">
 			<div class="pull-left">
-				<a id="new" class="btn btn-primary navbar-btn" role="button" href="javascript:editor.reset();"><i class="fa fa-star-o"></i>New</a>
-				<a id="open" class="btn btn-success navbar-btn" role="button" href="javascript:editor.open();"><i class="fa fa-folder-open-o"></i>Open</a>
-				<a id="save" class="btn btn-success navbar-btn" role="button" href="javascript:editor.save();"><i class="fa fa-floppy-o"></i>Save</a>
-				<a id="remove" class="btn btn-danger navbar-btn" role="button" href="javascript:editor.remove();"><i class="fa fa-trash"></i>Delete</a>
+				<button class="btn btn-warning navbar-btn" ng-click="reset()"><i class="fa fa-star-o"></i>New</button>
+				<button class="btn btn-success navbar-btn" ng-click="open()" ng-disabled="dirty"><i class="fa fa-folder-open-o"></i>Open</button>
+				<button class="btn btn-primary navbar-btn" ng-click="set(doc.name, doc.content)" ng-disabled="!dirty || name == ''"><i class="fa fa-floppy-o"></i>Save</button>
+				<input id="name" type="text" placeholder="Enter name..." ng-model="name" ng-minlength="1" ng-maxlength="256" ng-trim="true" ng-change="setDirty()"></input>
 			</div>
 			<div class="pull-right">
-				<a id="reload" class="btn btn-warning navbar-btn" role="button" href="."><i class="fa fa-refresh"></i>Refresh</a>
-				<a id="quit" class="btn btn-warning navbar-btn" role="button" href="/api/quit"><i class="fa fa-power-off"></i>Quit</a>
-				<a id="shutdown" class="btn btn-warning navbar-btn" role="button" href="/api/shutdown"><i class="fa fa-power-off"></i>Power Off</a>
+				<div class="btn-group" role="group">
+					<button class="btn btn-warning navbar-btn" ng-click="reload()"><i class="fa fa-refresh"></i>Refresh</button>
+					<button class="btn btn-danger navbar-btn" ng-click="quit()"><i class="fa fa-power-off"></i>Quit</button>
+				</div>
+				<button class="btn btn-danger navbar-btn" ng-click="shutdown()"><i class="fa fa-power-off"></i>Power Off</button>
 			</div>
 		</div>
 	</body>
