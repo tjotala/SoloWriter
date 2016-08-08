@@ -27,7 +27,7 @@ class Document
 
 	def to_json(x = nil)
 		stat = File.stat(@full_path)
-		{ :name => relative_path, :size => stat.size, :modified => stat.mtime }.to_json(x)
+		{ :name => relative_path, :size => stat.size, :modified => stat.mtime.iso8601 }.to_json(x)
 	end
 
 	private
@@ -102,6 +102,6 @@ end
 
 SoloServer.start! do
 	if SoloServer.settings.kiosk
-		SoloServer.set :browser_pid, spawn("kweb -KJYHCUA+-zbhrqfpoklgtjneduwxy http://localhost:#{SoloServer.settings.port}")
+		SoloServer.set :browser_pid, spawn("kweb3 -KJYHPU http://localhost:#{SoloServer.settings.port}")
 	end
 end
