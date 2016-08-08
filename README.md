@@ -32,4 +32,23 @@ This is a README for building a minimalistic distraction free text editor out of
 
 7) Install Sinatra and its dependencies. Nevermind the docs, you won't need them.
 
-	sudo gem install -y --no-document sinatra
+	sudo gem install -y --no-document sinatra sinatra-json
+
+8) Create a mount point for USB flash drives.
+
+	sudo mkdir /media/usb
+	sudo chown -R pi:pi /media/usb
+
+9) Configure Raspberry Pi to automount the USB flash drive.
+
+	sudo nano /etc/fstab
+
+	Add the line at the end:
+
+	/dev/sda1 /media/usb auto,users,rw,uid=pi,gid=pi 0 0
+
+10) Reboot Raspberry Pi
+
+11) Create custom splashscreen.
+
+	sudo apt-get install -y fbi
