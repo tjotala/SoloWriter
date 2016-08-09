@@ -6,17 +6,19 @@ app.controller('DocumentStore', function DocumentStore($scope, $http, $uibModal)
 	}
 
 	var contentStyle = window.getComputedStyle($scope.getById("content"));
+	$scope.modes = { main: 0, settings: 1 };
 	$scope.defaults = {
 		text: {
-			font: contentStyle.getPropertyValue('font-family'),
-			size: parseFloat(contentStyle.getPropertyValue('font-size')),
+			fontFamily: contentStyle.getPropertyValue('font-family'),
+			fontSize: parseFloat(contentStyle.getPropertyValue('font-size')),
 			minSize: 10, // px
 			maxSize: 50  // px
-		}
+		},
+		backgroundImage: true,
+		mode: $scope.modes.main
 	};
-	$scope.text = JSON.parse(JSON.stringify($scope.defaults.text)); // hokey JS way to dupe an object
+	$scope.settings = JSON.parse(JSON.stringify($scope.defaults)); // hokey JS way to dupe an object
 	$scope.development = true;
-	$scope.settings = false;
 
 	$scope.list = function(callback) {
 		$http.get("/api/files/").then(
@@ -32,15 +34,19 @@ app.controller('DocumentStore', function DocumentStore($scope, $http, $uibModal)
 	$scope.load = function(name) {
 		$http.get("/api/files/" + encodeURIComponent(name)).then(
 			function success(response) {
-				$scope.name = name;
-				$scope.content = response.data;
-				$scope.size = response.headers("Content-Length");
-				$scope.modified = new Date(Date.parse(response.headers("Last-Modified")));
-				$scope.dirty = false;
+				$scope.doc = {
+					name: name,
+					content: response.data,
+					size: response.headers("Content-Length"),
+					modified: new Date(Date.parse(response.headers("Last-Modified"))),
+					dirty: false
+				};
 				$scope.setFocus("content");
+				$scope.settings.backgroundImage = false;
 			},
 			function failure(response) {
 				$scope.reset();
+				$scope.setAlert("Failed to load document, reason: " + response);
 			}
 		);
 	};
@@ -48,11 +54,10 @@ app.controller('DocumentStore', function DocumentStore($scope, $http, $uibModal)
 	$scope.save = function(name, content) {
 		$http.put("/api/files/" + encodeURIComponent(name), content).then(
 			function success(response) {
-				console.log("saved " + name + " successfully!");
-				$scope.dirty = false;
+				$scope.doc.dirty = false;
 			},
 			function failure(response) {
-				console.log("saving " + name + " failed");
+				$scope.setAlert("Failed to save document, reason: " + response);
 			}
 		);
 	};
@@ -60,46 +65,90 @@ app.controller('DocumentStore', function DocumentStore($scope, $http, $uibModal)
 	$scope.remove = function(name) {
 		$http.delete("/api/files/" + encodeURIComponent(name)).then(
 			function success(response) {
+				$scope.setAlert("Deleted document '" + name + "'");
 			},
 			function failure(response) {
 				$scope.reset();
+				$scope.setAlert("Failed to delete document, reason: " + response);
 			}
 		);
 	};
 
 	$scope.setDirty = function() {
-		$scope.dirty = true;
+		$scope.doc.dirty = true;
 	};
+
+	$scope.canSave = function() {
+		return $scope.doc.dirty && $scope.doc.name != '' && $scope.doc.content != '';
+	}
+
+	$scope.shouldSave = function() {
+		return $scope.doc.dirty;
+	}
 
 	$scope.setFocus = function(id) {
 		$scope.getById(id).focus();
 	};
 
-	$scope.reset = function() {
-		$scope.name = undefined;
-		$scope.content = undefined;
-		$scope.size = undefined;
-		$scope.modified = undefined;
-		$scope.dirty = false;
+	$scope.setAlert = function(msg) {
+		$scope.alertMessage = msg;
+	};
+
+	$scope.clearAlert = function() {
+		$scope.alertMessage = undefined;
 		$scope.setFocus("content");
 	};
 
-	$scope.open = function() {
-		$scope.list(function(docs) {
-			$scope.docs = docs;
-		});
+	$scope.hasAlert = function() {
+		return $scope.alertMessage != undefined;
+	};
 
-		var dlg = $uibModal.open({
-			animation: false,
-			templateUrl: 'docs.html',
-			controller: 'OpenDocsCtrl',
-			scope: $scope,
-			size: 'lg'
-		});
+	$scope.reset = function(ask) {
+		if (ask && $scope.doc.dirty) {
+			$scope.confirm({
+				name: $scope.doc.name,
+				ok: function() {
+					$scope.reset(false); // call myself without prompting
+				}
+			});
+		} else {
+			$scope.doc = {
+				name: undefined,
+				content: undefined,
+				size: undefined,
+				modified: undefined,
+				dirty: false
+			};
+			$scope.setFocus("content");
+			$scope.settings.backgroundImage = true;
+		}
+	};
 
-		dlg.result.then(function (selected) {
-			$scope.load(selected);
-		});
+	$scope.open = function(ask) {
+		if (ask && $scope.doc.dirty) {
+			$scope.confirm({
+				name: $scope.doc.name,
+				ok: function() {
+					$scope.open(false); // call myself without prompting
+				}
+			});
+		} else {
+			$scope.list(function(docs) {
+				$scope.docs = docs;
+			});
+
+			var dlg = $uibModal.open({
+				animation: false,
+				templateUrl: 'docs.html',
+				controller: 'OpenDocsCtrl',
+				scope: $scope,
+				size: 'lg'
+			});
+
+			dlg.result.then(function (selected) {
+				$scope.load(selected);
+			});
+		}
 	};
 
 	$scope.reload = function() {
@@ -114,51 +163,61 @@ app.controller('DocumentStore', function DocumentStore($scope, $http, $uibModal)
 		$http.get("/api/shutdown");
 	};
 
-	$scope.enter_settings = function() {
-		$scope.settings = true;
+	$scope.enterSettings = function() {
+		$scope.settings.mode = $scope.modes.settings;
 	};
 
-	$scope.exit_settings = function() {
-		$scope.settings = false;
+	$scope.exitSettings = function() {
+		$scope.settings.mode = $scope.modes.main;
 	};
 
-	$scope.text_size = function(delta) {
+	$scope.isSettingsMode = function() {
+		return $scope.settings.mode == $scope.modes.settings;
+	};
+
+	$scope.getTextSize = function() {
+		return $scope.settings.text.fontSize + 'px';
+	};
+
+	$scope.setTextSize = function(delta) {
 		if (delta == 0 || delta == undefined) {
-			console.log("reset font size!");
-			$scope.text.size = $scope.defaults.text.size;
+			$scope.settings.text.fontSize = $scope.defaults.text.fontSize;
 		} else {
-			$scope.text.size = Math.round($scope.text.size + delta);
-			$scope.text.size = Math.max($scope.text.size, $scope.defaults.text.minSize);
-			$scope.text.size = Math.min($scope.text.size, $scope.defaults.text.maxSize);
+			$scope.settings.text.fontSize = Math.min(Math.max(Math.round($scope.settings.text.fontSize + delta), $scope.defaults.text.minSize), $scope.defaults.text.maxSize);
 		}
 	};
 
-	$scope.confirm = function(title, message) {
+	$scope.toggleBackgroundImage = function() {
+		$scope.settings.backgroundImage = !$scope.settings.backgroundImage;
+	};
+
+	$scope.hasBackgroundImage = function() {
+		return $scope.settings.backgroundImage;
+	};
+
+	$scope.confirm = function(opts) {
+		opts.title || (opts.title = "Confirm");
+		opts.message || (opts.message = "Unsaved modifications in document '" + opts.name + "' will be lost. Are you sure?");
+		opts.cancel || (opts.cancel = function() { $scope.setFocus("content"); });
+		$scope.prompt(opts);
+	};
+
+	$scope.prompt = function(opts) {
 		var dlg = $uibModal.open({
 			animation: false,
 			templateUrl: 'prompt.html',
 			controller: 'PromptCtrl',
 			resolve: {
 				title: function() {
-					return title;
+					return opts.title;
 				},
 				message: function() {
-					return message;
+					return opts.message;
 				}
 			}
 		});
 
-		var ok = false;
-		dlg.result.then(
-			function() {
-				ok = true;
-			},
-			function() {
-				ok = false;
-			}
-		);
-
-		return ok;
+		dlg.result.then(opts.ok, opts.cancel);
 	};
 
 	$scope.reset();
@@ -170,10 +229,14 @@ app.controller('OpenDocsCtrl', function ($scope, $uibModalInstance) {
 	}
 
 	$scope.delete = function(doc) {
-		if ($scope.confirm("Confirm", "Deleting document '" + doc.name + "'. Are you sure?")) {
-			// $scope.remove(doc.name);
-			doc.removed = true;
-		}
+		$scope.confirm({
+			name: doc.name,
+			ok: function() {
+				$scope.remove(doc.name);
+				doc.removed = true;
+			},
+			message: "Deleting document '" + doc.name + "'. Are you sure?"
+		});
 	}
 
 	$scope.cancel = function () {
