@@ -19,9 +19,9 @@
 		<div id="footer">
 			<div ng-hide="isSettingsMode()" class="ng-cloak">
 				<div class="pull-left">
-					<button class="btn btn-warning navbar-btn" ng-click="reset(true)"><i class="fa fa-star-o"></i>&nbsp;New</button>
-					<button class="btn btn-success navbar-btn" ng-click="open(true)"><i class="fa fa-folder-open-o"></i>&nbsp;Open</button>
-					<button class="btn btn-primary navbar-btn" ng-click="save(doc.name, doc.content)" ng-disabled="!canSave()"><i class="fa fa-floppy-o"></i>&nbsp;Save</button>
+					<button class="btn btn-warning navbar-btn" ng-click="resetDoc(true)"><i class="fa fa-file-text-o"></i>&nbsp;New</button>
+					<button class="btn btn-success navbar-btn" ng-click="openDoc(true)"><i class="fa fa-folder-open-o"></i>&nbsp;Open</button>
+					<button class="btn btn-primary navbar-btn" ng-click="saveDoc(doc.name, doc.content)" ng-disabled="!canSave()"><i class="fa fa-save"></i>&nbsp;Save</button>
 					<input id="name" type="text" placeholder="Enter name..." ng-model="doc.name" ng-minlength="1" ng-maxlength="256" ng-trim="true" ng-change="setDirty()"></input>
 				</div>
 				<div class="pull-right">
@@ -37,10 +37,11 @@
 				<button class="btn btn-danger navbar-btn" ng-click="exitSettings()"><i class="fa fa-chevron-left"></i>&nbsp;Back</button>
 				<div class="btn-group" role="group">
 					<button class="btn btn-primary navbar-btn" ng-click="setTextSize(2)"><i class="fa fa-plus"></i></button>
-					<button class="btn btn-primary navbar-btn" ng-click="setTextSize()">Font</button>
+					<button class="btn btn-primary navbar-btn" ng-click="setTextSize()"><i class="fa fa-font"></i></button>
 					<button class="btn btn-primary navbar-btn" ng-click="setTextSize(-2)"><i class="fa fa-minus"></i></button>
 				</div>
 				<button class="btn btn-primary navbar-btn" ng-click="toggleBackgroundImage()"><i class="fa" ng-class="hasBackgroundImage() ? 'fa-toggle-on' : 'fa-toggle-off'"></i>&nbsp;<i class="fa fa-image"></i></button>
+				<button class="btn btn-primary navbar-btn" ng-click="selectStorage()"><i class="fa fa-database"></i>&nbsp;Storage</button>
 			</div>
 		</div>
 	</body>

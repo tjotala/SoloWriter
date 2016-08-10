@@ -1,11 +1,19 @@
 var app = angular.module('App', [ 'ui.bootstrap' ]);
 
-app.controller('DocumentStore', function DocumentStore($scope, $http, $uibModal) {
-	$scope.getById = function(id) {
-		return document.getElementById(id);
-	}
+function getById(id) {
+	return document.getElementById(id);
+}
 
-	var contentStyle = window.getComputedStyle($scope.getById("content"));
+function setFocus(id) {
+	getById(id).focus();
+}
+
+function cloneObject(obj) {
+	return JSON.parse(JSON.stringify(obj)); // hokey JS way to dupe an object
+}
+
+app.controller('DocumentStore', function DocumentStore($scope, $http, $uibModal) {
+	var contentStyle = window.getComputedStyle(getById("content"));
 	$scope.modes = { main: 0, settings: 1 };
 	$scope.defaults = {
 		text: {
@@ -17,11 +25,11 @@ app.controller('DocumentStore', function DocumentStore($scope, $http, $uibModal)
 		backgroundImage: true,
 		mode: $scope.modes.main
 	};
-	$scope.settings = JSON.parse(JSON.stringify($scope.defaults)); // hokey JS way to dupe an object
+	$scope.settings = cloneObject($scope.defaults);
 	$scope.development = true;
 
-	$scope.list = function(callback) {
-		$http.get("/api/files/").then(
+	$scope.getList = function(url, callback) {
+		$http.get(url, { cache: false }).then(
 			function success(response) {
 				callback(response.data);
 			},
@@ -31,8 +39,20 @@ app.controller('DocumentStore', function DocumentStore($scope, $http, $uibModal)
 		);
 	};
 
-	$scope.load = function(name) {
-		$http.get("/api/files/" + encodeURIComponent(name)).then(
+	$scope.listDocs = function(callback) {
+		$scope.getList("/api/files/", callback);
+	};
+
+	$scope.listVolumes = function(callback) {
+		$scope.getList("/api/volumes", callback);
+	};
+
+	$scope.listNetworks = function(callback) {
+		$scope.getList("/api/networks", callback);
+	};
+
+	$scope.loadDoc = function(name) {
+		$http.get("/api/files/" + encodeURIComponent(name), { cache: false }).then(
 			function success(response) {
 				$scope.doc = {
 					name: name,
@@ -41,18 +61,18 @@ app.controller('DocumentStore', function DocumentStore($scope, $http, $uibModal)
 					modified: new Date(Date.parse(response.headers("Last-Modified"))),
 					dirty: false
 				};
-				$scope.setFocus("content");
+				setFocus("content");
 				$scope.settings.backgroundImage = false;
 			},
 			function failure(response) {
-				$scope.reset();
+				$scope.resetDoc();
 				$scope.setAlert("Failed to load document, reason: " + response);
 			}
 		);
 	};
 
-	$scope.save = function(name, content) {
-		$http.put("/api/files/" + encodeURIComponent(name), content).then(
+	$scope.saveDoc = function(name, content) {
+		$http.put("/api/files/" + encodeURIComponent(name), content, { cache: false }).then(
 			function success(response) {
 				$scope.doc.dirty = false;
 			},
@@ -62,13 +82,13 @@ app.controller('DocumentStore', function DocumentStore($scope, $http, $uibModal)
 		);
 	};
 
-	$scope.remove = function(name) {
-		$http.delete("/api/files/" + encodeURIComponent(name)).then(
+	$scope.deleteDoc = function(name) {
+		$http.delete("/api/files/" + encodeURIComponent(name), { cache: false }).then(
 			function success(response) {
 				$scope.setAlert("Deleted document '" + name + "'");
 			},
 			function failure(response) {
-				$scope.reset();
+				$scope.resetDoc();
 				$scope.setAlert("Failed to delete document, reason: " + response);
 			}
 		);
@@ -86,29 +106,25 @@ app.controller('DocumentStore', function DocumentStore($scope, $http, $uibModal)
 		return $scope.doc.dirty;
 	}
 
-	$scope.setFocus = function(id) {
-		$scope.getById(id).focus();
-	};
-
 	$scope.setAlert = function(msg) {
 		$scope.alertMessage = msg;
 	};
 
 	$scope.clearAlert = function() {
 		$scope.alertMessage = undefined;
-		$scope.setFocus("content");
+		setFocus("content");
 	};
 
 	$scope.hasAlert = function() {
 		return $scope.alertMessage != undefined;
 	};
 
-	$scope.reset = function(ask) {
+	$scope.resetDoc = function(ask) {
 		if (ask && $scope.doc.dirty) {
 			$scope.confirm({
 				name: $scope.doc.name,
 				ok: function() {
-					$scope.reset(false); // call myself without prompting
+					$scope.resetDoc(false); // call myself without prompting
 				}
 			});
 		} else {
@@ -119,34 +135,34 @@ app.controller('DocumentStore', function DocumentStore($scope, $http, $uibModal)
 				modified: undefined,
 				dirty: false
 			};
-			$scope.setFocus("content");
+			setFocus("content");
 			$scope.settings.backgroundImage = true;
 		}
 	};
 
-	$scope.open = function(ask) {
+	$scope.openDoc = function(ask) {
 		if (ask && $scope.doc.dirty) {
 			$scope.confirm({
 				name: $scope.doc.name,
 				ok: function() {
-					$scope.open(false); // call myself without prompting
+					$scope.openDoc(false); // call myself without prompting
 				}
 			});
 		} else {
-			$scope.list(function(docs) {
-				$scope.docs = docs;
+			$scope.listDocs(function(documents) {
+				$scope.documents = documents;
 			});
 
 			var dlg = $uibModal.open({
 				animation: false,
 				templateUrl: 'docs.html',
-				controller: 'OpenDocsCtrl',
+				controller: 'DocumentsCtrl',
 				scope: $scope,
 				size: 'lg'
 			});
 
 			dlg.result.then(function (selected) {
-				$scope.load(selected);
+				$scope.loadDoc(selected);
 			});
 		}
 	};
@@ -195,10 +211,28 @@ app.controller('DocumentStore', function DocumentStore($scope, $http, $uibModal)
 		return $scope.settings.backgroundImage;
 	};
 
+	$scope.selectStorage = function() {
+		$scope.listVolumes(function(volumes) {
+			$scope.volumes = volumes;
+		});
+
+		var dlg = $uibModal.open({
+			animation: false,
+			templateUrl: 'storage.html',
+			controller: 'StorageCtrl',
+			scope: $scope,
+			size: 'lg'
+		});
+
+		dlg.result.then(function (selected) {
+			$scope.storage = selected;
+		});
+	};
+
 	$scope.confirm = function(opts) {
 		opts.title || (opts.title = "Confirm");
 		opts.message || (opts.message = "Unsaved modifications in document '" + opts.name + "' will be lost. Are you sure?");
-		opts.cancel || (opts.cancel = function() { $scope.setFocus("content"); });
+		opts.cancel || (opts.cancel = function() { setFocus("content"); });
 		$scope.prompt(opts);
 	};
 
@@ -220,23 +254,33 @@ app.controller('DocumentStore', function DocumentStore($scope, $http, $uibModal)
 		dlg.result.then(opts.ok, opts.cancel);
 	};
 
-	$scope.reset();
+	$scope.resetDoc();
 });
 
-app.controller('OpenDocsCtrl', function ($scope, $uibModalInstance) {
-	$scope.select = function(doc) {
+app.controller('DocumentsCtrl', function ($scope, $uibModalInstance) {
+	$scope.selectDoc = function(doc) {
 		$uibModalInstance.close(doc.name);
 	}
 
-	$scope.delete = function(doc) {
+	$scope.deleteDoc = function(doc) {
 		$scope.confirm({
 			name: doc.name,
 			ok: function() {
-				$scope.remove(doc.name);
+				$scope.deleteDoc(doc.name);
 				doc.removed = true;
 			},
 			message: "Deleting document '" + doc.name + "'. Are you sure?"
 		});
+	}
+
+	$scope.cancel = function () {
+		$uibModalInstance.dismiss('cancel');
+	};
+});
+
+app.controller('StorageCtrl', function ($scope, $uibModalInstance) {
+	$scope.select = function(storage) {
+		$uibModalInstance.close(storage);
 	}
 
 	$scope.cancel = function () {
@@ -255,4 +299,14 @@ app.controller('PromptCtrl', function ($scope, $uibModalInstance, title, message
 	$scope.cancel = function () {
 		$uibModalInstance.dismiss('cancel');
 	};
+});
+
+app.filter('bytes', function() {
+	return function(bytes, precision) {
+		if (isNaN(parseFloat(bytes)) || !isFinite(bytes)) return '-';
+		if (typeof precision === 'undefined') precision = 1;
+		var units = ['bytes', 'kB', 'MB', 'GB', 'TB', 'PB'],
+			number = Math.floor(Math.log(bytes) / Math.log(1024));
+		return (bytes / Math.pow(1024, Math.floor(number))).toFixed(precision) +  ' ' + units[number];
+	}
 });

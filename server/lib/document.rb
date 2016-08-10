@@ -2,11 +2,11 @@ class Document
 	attr_reader :full_path, :base_path
 
 	def self.relative(base_name, base_path)
-		Document.new(File.join(base_path, base_name), base_path)
+		new(File.join(base_path, base_name), base_path)
 	end
 
 	def self.absolute(full_path, base_path)
-		Document.new(full_path, base_path)
+		new(full_path, base_path)
 	end
 
 	def relative_path

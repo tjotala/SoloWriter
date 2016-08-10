@@ -1,10 +1,10 @@
 #!/usr/bin/ruby
 require 'sinatra/base'
 require 'sinatra/json'
-require_relative File.join('lib', 'server')
+require_relative 'platform'
+Platform::require_lib 'server'
+Platform::require_lib 'browser'
 
 SoloServer.start! do
-	if SoloServer.settings.kiosk
-		SoloServer.set :browser_pid, spawn("kweb3 -KJYHPU http://localhost:#{SoloServer.settings.port}")
-	end
+	SoloServer.set :browser, Browser.new("http://localhost:#{SoloServer.settings.port}")
 end

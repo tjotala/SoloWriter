@@ -1,18 +1,24 @@
-%w[ volumes documents networks ].each { |inc| require_relative inc }
+%w[ volumes documents networks ].each { |file| Platform::require_lib file }
 
 class SoloServer < Sinatra::Base
 	configure do
-		set :root, File.dirname(File.expand_path(__FILE__))
-		set :public_folder, Proc.new { File.join(root, '..', '..', 'web_ui') }
+		set :root, Platform::ROOT_PATH
+		set :public_folder, Proc.new { File.join(root, '..', 'web_ui') }
 		enable :static
 		enable :logging
-		set :doc_folder, Proc.new { File.join(root, '..', '..', 'docs') }
+		set :static_cache_control, [ :public, :max_age => 60 ]
+		set :doc_folder, Proc.new { File.join(root, '..', 'docs') }
 		set :port, 8080
 		set :bind, '0.0.0.0' # allow access from other hosts
-		set :kiosk, (RUBY_PLATFORM == "arm-linux-gnueabihf")
+	end
+
+	before do
+		# we don't want the client to cache these API responses
+		cache_control :public, :no_store
 	end
 
 	get '/' do
+		cache_control :public, :max_age => 60
 		send_file(File.join(settings.public_folder, 'index.html'))
 	end
 
@@ -43,15 +49,14 @@ class SoloServer < Sinatra::Base
 	end
 
 	get '/api/quit' do
-		if settings.kiosk
-			Process.kill('TERM', settings.browser_pid)
-		end
-		Process.kill('TERM', Process.pid)
-		status 204
+		settings.browser.shutdown
+		Platform::quit
+		status 204 # probably won't even get here
 	end
 
 	get '/api/shutdown' do
-		exec("sudo shutdown -h now")
-		status 204
+		settings.browser.shutdown
+		Platform::shutdown
+		status 204 # probably won't even get here
 	end
 end

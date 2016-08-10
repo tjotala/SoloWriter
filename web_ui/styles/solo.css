@@ -43,6 +43,10 @@ html {
 	height: 438px;
 }
 
+.doc-row {
+	cursor: pointer;
+}
+
 #editor {
 	position: fixed;
 	left: 0px;
@@ -72,5 +76,5 @@ html {
 }
 
 .logo {
-    background: url('/images/purple_transparent_logo.jpg') no-repeat center center;
+    /*background: url('/images/purple_transparent_logo.jpg') no-repeat center center;*/
 }
