@@ -43,7 +43,7 @@ task :prep do
 end
 
 task :deploy => :package do
-	ssh "mkdir -vp ~/solo"
+	ssh "mkdir -vp ~/solo/logs"
 	sh "scp #{PACKAGE} #{TARGET}:~/solo/#{File.basename(PACKAGE)}"
 	ssh "tar -C ~/solo --overwrite -xzvf ~/solo/#{File.basename(PACKAGE)}"
 	ssh "rm -v ~/solo/#{File.basename(PACKAGE)}"
