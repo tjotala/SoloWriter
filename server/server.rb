@@ -2,9 +2,9 @@
 require 'sinatra/base'
 require 'sinatra/json'
 require_relative 'platform'
-Platform::require_lib 'server'
-Platform::require_lib 'browser'
+require File.join(Platform::LIB_PATH, 'server')
+require File.join(Platform::LIB_PATH, 'browser')
 
 SoloServer.start! do
-	SoloServer.set :browser, Browser.new("http://localhost:#{SoloServer.settings.port}")
+	SoloServer.set :browser, Browser.new("http://localhost:#{SoloServer.settings.port}").launch
 end

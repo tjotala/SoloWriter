@@ -6,42 +6,25 @@
 		<thead>
 			<tr>
 				<th></th>
+				<th></th>
 				<th>Location</th>
 				<th>Capacity</th>
 				<th>Available</th>
-				<th>Actions</th>
+				<th ng-if="isDevelopment()">ID</id>
 			</tr>
 		</thead>
 		<tbody>
-			<tr ng-repeat="volume in volumes | orderBy: 'path'">
-				<td><i class="fa" ng-class="volumes.storage == volume.path ? 'fa-check-square-o' : 'fa-square-o'" ng-disabled="volume.path == ''"></i></td>
-				<td><i class="fa" ng-class="volume.actions.mount || volume.actions.unmount ? 'fa-usb' : 'fa-hdd-o'"></i>&nbsp;{{volume.label}}</td>
+			<tr ng-repeat="volume in volumes">
+				<td ng-switch="volume.mounted">
+					<i ng-switch-when="true" class="fa fa-fw fa-lg" ng-class="isVolumeSelected(volume) ? 'fa-check-square-o' : 'fa-square-o'" ng-click="selectVolume(volume)"></i>
+					<i ng-switch-when="true" class="fa fa-fw fa-lg fa-unlink" ng-show="volume.can_unmount" ng-click="unmountVolume(volume)"></i>
+					<i ng-switch-when="false" class="fa fa-fw fa-lg fa-link" ng-show="volume.can_mount" ng-click="mountVolume(volume)"></i>
+				</td>
+				<td><i class="fa fa-fw fa-lg" ng-class="getStorageIcon(volume)"></i></td>
+				<td>{{volume.label}}</td>
 				<td>{{volume.total_space | bytes}}</td>
 				<td>{{volume.available_space | bytes}}</td>
-				<td>
-					<i class="fa fa-link" ng-show="volume.actions.mount" ng-click="mountVolume()"></i>
-					<i class="fa fa-unlink" ng-show="volume.actions.unmount" ng-click="unmountVolume()"></i>
-				</td>
-			</tr>
-			<tr>
-				<td><i class="fa" ng-class="dropbox.isConnected() ? 'fa-check-square-o' : 'fa-square-o'"></i></td>
-				<td><i class="fa fa-dropbox"></i>&nbsp;Dropbox</td>
-				<td>{{dropbox.total_space}}</td>
-				<td>{{dropbox.available_space}}</td>
-				<td>
-					<i class="fa fa-link" ng-hide="dropbox.isConnected()" ng-click="mountDropbox()"></i>
-					<i class="fa fa-unlink" ng-show="dropbox.isConnected()" ng-click="unmountDropbox()"></i>
-				</td>
-			</tr>
-			<tr ng-click="connectGoogleDocs()">
-				<td><i class="fa" ng-class="gdocs.isConnected() ? 'fa-check-square-o' : 'fa-square-o'"></i></td>
-				<td><i class="fa fa-google"></i>&nbsp;Google Docs</td>
-				<td>{{gdocs.total_space}}</td>
-				<td>{{gdocs.available_space}}</td>
-				<td>
-					<i class="fa fa-link" ng-hide="gdocs.isConnected()" ng-click="mountGoogleDocs()"></i>
-					<i class="fa fa-unlink" ng-show="gdocs.isConnected()" ng-click="unmountGoogleDocs()"></i>
-				</td>
+				<td ng-if="isDevelopment()">{{volume.id}}</td>
 			</tr>
 		</tbody>
 	</table>

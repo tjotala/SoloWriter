@@ -1,5 +1,5 @@
 class Networks
-	def self.list
-		[ ]
+	def list
+		[ 'fake' ]
 	end
 end

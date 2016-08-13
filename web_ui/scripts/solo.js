@@ -27,9 +27,18 @@ app.controller('DocumentStore', function DocumentStore($scope, $http, $uibModal)
 	};
 	$scope.settings = cloneObject($scope.defaults);
 	$scope.development = true;
+	$scope.storage = undefined;
+
+	$scope.isDevelopment = function() {
+		return $scope.development;
+	};
+
+	$scope.toggleDevelopment = function() {
+		return $scope.development = !$scope.development;
+	};
 
 	$scope.getList = function(url, callback) {
-		$http.get(url, { cache: false }).then(
+		$http.get(url).then(
 			function success(response) {
 				callback(response.data);
 			},
@@ -39,8 +48,12 @@ app.controller('DocumentStore', function DocumentStore($scope, $http, $uibModal)
 		);
 	};
 
+	$scope.docPath = function(name, volume) {
+		return "/api/volumes/" + (volume ? volume.id : $scope.storage.id) + "/files/" + encodeURIComponent(name);
+	};
+
 	$scope.listDocs = function(callback) {
-		$scope.getList("/api/files/", callback);
+		$scope.getList($scope.docPath(""), callback);
 	};
 
 	$scope.listVolumes = function(callback) {
@@ -51,8 +64,38 @@ app.controller('DocumentStore', function DocumentStore($scope, $http, $uibModal)
 		$scope.getList("/api/networks", callback);
 	};
 
+	$scope.getLocalVolume = function(callback) {
+		$http.get("/api/volumes/local").then(
+			function success(response) {
+				callback(response.data);
+			},
+			function failure(response) {
+			}
+		);
+	};
+
+	$scope.mountVolume = function(volume, callback) {
+		$http.post("/api/volumes/" + volume.id + "/mount").then(
+			function success(response) {
+				callback(response.data);
+			},
+			function failure(response) {
+			}
+		);
+	};
+
+	$scope.unmountVolume = function(volume, callback) {
+		$http.post("/api/volumes/" + volume.id + "/unmount").then(
+			function success(response) {
+				callback(response.data);
+			},
+			function failure(response) {
+			}
+		);
+	};
+
 	$scope.loadDoc = function(name) {
-		$http.get("/api/files/" + encodeURIComponent(name), { cache: false }).then(
+		$http.get($scope.docPath(name)).then(
 			function success(response) {
 				$scope.doc = {
 					name: name,
@@ -72,7 +115,7 @@ app.controller('DocumentStore', function DocumentStore($scope, $http, $uibModal)
 	};
 
 	$scope.saveDoc = function(name, content) {
-		$http.put("/api/files/" + encodeURIComponent(name), content, { cache: false }).then(
+		$http.put($scope.docPath(name), content).then(
 			function success(response) {
 				$scope.doc.dirty = false;
 			},
@@ -83,7 +126,7 @@ app.controller('DocumentStore', function DocumentStore($scope, $http, $uibModal)
 	};
 
 	$scope.deleteDoc = function(name) {
-		$http.delete("/api/files/" + encodeURIComponent(name), { cache: false }).then(
+		$http.delete($scope.docPath(name)).then(
 			function success(response) {
 				$scope.setAlert("Deleted document '" + name + "'");
 			},
@@ -172,11 +215,11 @@ app.controller('DocumentStore', function DocumentStore($scope, $http, $uibModal)
 	};
 
 	$scope.quit = function() {
-		$http.get("/api/quit");
+		$http.post("/api/quit");
 	};
 
 	$scope.shutdown = function() {
-		$http.get("/api/shutdown");
+		$http.post("/api/shutdown");
 	};
 
 	$scope.enterSettings = function() {
@@ -204,24 +247,45 @@ app.controller('DocumentStore', function DocumentStore($scope, $http, $uibModal)
 	};
 
 	$scope.toggleBackgroundImage = function() {
-		$scope.settings.backgroundImage = !$scope.settings.backgroundImage;
+		return $scope.settings.backgroundImage = !$scope.settings.backgroundImage;
 	};
 
 	$scope.hasBackgroundImage = function() {
 		return $scope.settings.backgroundImage;
 	};
 
-	$scope.selectStorage = function() {
+	$scope.getStorageIcon = function(volume) {
+		switch (volume.id) {
+			case 'local': return 'fa-hdd-o';
+			case 'dropbox': return 'fa-dropbox';
+			case 'google': return 'fa-google';
+			case 'amazon': return 'fa-amazon';
+		}
+		return (volume.interface == 'usb') ? 'fa-usb' : ((volume.interface == 'network') ? 'fa-server' : 'fa-share-alt');
+	};
+
+	$scope.getSelectedStorage = function() {
+		return $scope.storage;
+	};
+
+	$scope.isStorageSelected = function(volume) {
+		return $scope.storage.id == volume.id;
+	};
+
+	$scope.refreshVolumes = function() {
 		$scope.listVolumes(function(volumes) {
 			$scope.volumes = volumes;
 		});
+	};
+
+	$scope.selectStorage = function() {
+		$scope.refreshVolumes();
 
 		var dlg = $uibModal.open({
 			animation: false,
 			templateUrl: 'storage.html',
 			controller: 'StorageCtrl',
-			scope: $scope,
-			size: 'lg'
+			scope: $scope
 		});
 
 		dlg.result.then(function (selected) {
@@ -254,13 +318,16 @@ app.controller('DocumentStore', function DocumentStore($scope, $http, $uibModal)
 		dlg.result.then(opts.ok, opts.cancel);
 	};
 
+	$scope.getLocalVolume(function(volume) {
+		$scope.storage = volume;
+	});
 	$scope.resetDoc();
 });
 
 app.controller('DocumentsCtrl', function ($scope, $uibModalInstance) {
 	$scope.selectDoc = function(doc) {
 		$uibModalInstance.close(doc.name);
-	}
+	};
 
 	$scope.deleteDoc = function(doc) {
 		$scope.confirm({
@@ -271,7 +338,7 @@ app.controller('DocumentsCtrl', function ($scope, $uibModalInstance) {
 			},
 			message: "Deleting document '" + doc.name + "'. Are you sure?"
 		});
-	}
+	};
 
 	$scope.cancel = function () {
 		$uibModalInstance.dismiss('cancel');
@@ -279,9 +346,31 @@ app.controller('DocumentsCtrl', function ($scope, $uibModalInstance) {
 });
 
 app.controller('StorageCtrl', function ($scope, $uibModalInstance) {
-	$scope.select = function(storage) {
-		$uibModalInstance.close(storage);
-	}
+	$scope.selected = $scope.getSelectedStorage();
+
+	$scope.isVolumeSelected = function(volume) {
+		return $scope.selected.id == volume.id;
+	};
+
+	$scope.selectVolume = function(volume) {
+		$scope.selected = volume;
+	};
+
+	$scope.mountVolume = function(volume) {
+		$scope.$parent.mountVolume(volume, function() {
+			$scope.refreshVolumes();
+		});
+	};
+
+	$scope.unmountVolume = function(volume) {
+		$scope.$parent.unmountVolume(volume, function() {
+			$scope.refreshVolumes();
+		});
+	};
+
+	$scope.ok = function() {
+		$uibModalInstance.close($scope.selected);
+	};
 
 	$scope.cancel = function () {
 		$uibModalInstance.dismiss('cancel');
@@ -294,7 +383,7 @@ app.controller('PromptCtrl', function ($scope, $uibModalInstance, title, message
 
 	$scope.ok = function() {
 		$uibModalInstance.close('ok');
-	}
+	};
 
 	$scope.cancel = function () {
 		$uibModalInstance.dismiss('cancel');
@@ -303,7 +392,7 @@ app.controller('PromptCtrl', function ($scope, $uibModalInstance, title, message
 
 app.filter('bytes', function() {
 	return function(bytes, precision) {
-		if (isNaN(parseFloat(bytes)) || !isFinite(bytes)) return '-';
+		if (bytes == 0 || isNaN(parseFloat(bytes)) || !isFinite(bytes)) return '-';
 		if (typeof precision === 'undefined') precision = 1;
 		var units = ['bytes', 'kB', 'MB', 'GB', 'TB', 'PB'],
 			number = Math.floor(Math.log(bytes) / Math.log(1024));

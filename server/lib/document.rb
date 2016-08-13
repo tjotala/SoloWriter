@@ -1,35 +1,20 @@
 class Document
-	attr_reader :full_path, :base_path
+	attr_reader :path
 
-	def self.relative(base_name, base_path)
-		new(File.join(base_path, base_name), base_path)
+	def initialize(path)
+		@path = path
 	end
 
-	def self.absolute(full_path, base_path)
-		new(full_path, base_path)
-	end
-
-	def relative_path
-		@full_path.gsub(/^#{@base_path}\//, '')
-	end
-
-	def write(content)
-		File.open(@full_path, 'w') { |f| f.write(content) }
+	def create(content)
+		File.open(@path, 'w') { |f| f.write(content) }
 	end
 
 	def remove
-		File.unlink(@full_path)
+		File.unlink(@path)
 	end
 
-	def to_json(x = nil)
-		stat = File.stat(@full_path)
-		{ :name => relative_path, :size => stat.size, :modified => stat.mtime.iso8601 }.to_json(x)
-	end
-
-	private
-
-	def initialize(full_path, base_path)
-		@full_path = full_path
-		@base_path = base_path
+	def to_json(*args)
+		stat = File.stat(@path)
+		{ name: File.basename(@path), size: stat.size, modified: stat.mtime.iso8601 }.to_json(args)
 	end
 end

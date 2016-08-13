@@ -1,0 +1,6 @@
+source 'https://rubygems.org'
+gem 'promise'
+gem 'sinatra'
+gem 'sinatra-json'
+gem 'rake', :groups => [ :development, :test ]
+gem 'rspec', :require => 'spec', :groups => [ :development, :test ]
