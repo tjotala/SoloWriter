@@ -34,6 +34,7 @@ class SoloServer < Sinatra::Base
 
 	get '/' do
 		cache_control :public, :max_age => 60
+		content_type :html
 		send_file(File.join(settings.public_folder, 'index.html'))
 	end
 
