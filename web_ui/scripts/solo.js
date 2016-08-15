@@ -129,11 +129,16 @@ app.factory('Volumes', function($http, Volume) {
 			return "/api/volumes/";
 		},
 
+		parseList: function(response) {
+			return response.data.map(function(v, i, a) {
+				return new Volume(v);
+			});			
+		},
+
 		getList: function() {
+			var self = this;
 			return $http.get(this.getPath()).then(function success(response) {
-				return response.data.map(function(v, i, a) {
-					return new Volume(v);
-				});
+				return self.parseList(response);
 			});
 		},
 
