@@ -5,6 +5,6 @@
 	<p>{{message}}</p>
 </div>
 <div class="modal-footer">
-	<button class="btn btn-primary" type="button" ng-click="ok()">OK</button>
-	<button class="btn btn-warning" type="button" ng-hide="ok_only" ng-click="cancel()">Cancel</button>
+	<button class="btn btn-primary" type="button" ng-click="$close('ok')">OK</button>
+	<button class="btn btn-warning" type="button" ng-hide="ok_only" ng-click="$dismiss('cancel')">Cancel</button>
 </div>

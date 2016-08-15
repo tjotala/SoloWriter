@@ -9,6 +9,10 @@ class Volume
 	attr_reader :available_space
 
 	def initialize(opts = { })
+		update(opts)
+	end
+
+	def update(opts = { })
 		@id = opts[:id] or raise ArgumentError
 		@interface = opts[:interface] or raise ArgumentError
 		@name = opts[:name] or raise ArgumentError
@@ -17,6 +21,7 @@ class Volume
 		@path = opts[:path]
 		@total_space = opts[:total_space] || 0
 		@available_space = opts[:available_space] || 0
+		self
 	end
 
 	def to_json(*args)
@@ -25,6 +30,7 @@ class Volume
 			interface: @interface,
 			name: @name,
 			label: @label,
+			path: @path,
 			total_space: @total_space,
 			available_space: @available_space,
 			mounted: mounted?,

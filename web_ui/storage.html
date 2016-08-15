@@ -1,5 +1,6 @@
-<div class="modal-header bg-danger">
-	<h4 class="modal-title">Storage Settings</h4>
+<div class="modal-header bg-primary">
+	<h4 class="modal-title pull-left">Storage Settings <i class="fa fa-spinner fa-spin fa-fw fa-lg" ng-show="loading == true"></i></h4>
+	<i class="fa fa-close pull-right" ng-click="$dismiss('cancel')"></i>
 </div>
 <div class="modal-body">
 	<table class="table table-condensed table-hover">
@@ -15,12 +16,13 @@
 		</thead>
 		<tbody>
 			<tr ng-repeat="volume in volumes">
-				<td ng-switch="volume.mounted">
-					<i ng-switch-when="true" class="fa fa-fw fa-lg" ng-class="isVolumeSelected(volume) ? 'fa-check-square-o' : 'fa-square-o'" ng-click="selectVolume(volume)"></i>
-					<i ng-switch-when="true" class="fa fa-fw fa-lg fa-unlink" ng-show="volume.can_unmount" ng-click="unmountVolume(volume)"></i>
-					<i ng-switch-when="false" class="fa fa-fw fa-lg fa-link" ng-show="volume.can_mount" ng-click="mountVolume(volume)"></i>
+				<td>
+					<i ng-show="loading == volume.id" class="fa fa-spinner fa-spin fa-fw fa-lg"></i>
+					<i ng-show="loading != volume.id && volume.mounted" class="fa fa-fw fa-lg" ng-class="isVolumeSelected(volume) ? 'fa-check-square-o' : 'fa-square-o'" ng-click="selectVolume(volume)"></i>
+					<i ng-show="loading != volume.id && volume.mounted && volume.can_unmount" class="fa fa-fw fa-lg fa-unlink" ng-click="unmountVolume(volume)"></i>
+					<i ng-show="loading != volume.id && !volume.mounted && volume.can_mount" class="fa fa-fw fa-lg fa-link" ng-click="mountVolume(volume)"></i>
 				</td>
-				<td><i class="fa fa-fw fa-lg" ng-class="getStorageIcon(volume)"></i></td>
+				<td><i class="fa fa-fw fa-lg" ng-class="volume.getIcon()"></i></td>
 				<td>{{volume.label}}</td>
 				<td>{{volume.total_space | bytes}}</td>
 				<td>{{volume.available_space | bytes}}</td>
@@ -28,8 +30,4 @@
 			</tr>
 		</tbody>
 	</table>
-</div>
-<div class="modal-footer">
-	<button class="btn btn-primary" type="button" ng-click="ok()">OK</button>
-	<button class="btn btn-warning" type="button" ng-click="cancel()">Cancel</button>
 </div>

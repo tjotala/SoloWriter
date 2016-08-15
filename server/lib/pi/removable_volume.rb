@@ -1,35 +1,50 @@
 class RemovableVolume < Volume
-	def initialize(vol)
-		super({
-			id: vol[/UUID="([^"]+)"/, 1],
-			interface: promise { self.class::get_interface(@path) },
-			name: vol[/NAME="([^"]*)"/, 1],
-			label: vol[/LABEL="([^"]+)"/, 1],
-			fstype: vol[/FSTYPE="([^"]+)"/, 1],
-			path: vol[/MOUNTPOINT="([^"]*)"/, 1],
-			total_space: vol[/SIZE="([^"]+)"/, 1].to_i,
-			available_space: promise { mounted? ? self.class::get_available_space(@path) : 0 },
-		})
-	end
-
 	def mount
-		%x[sudo mkdir -p /media/usb]
-		%x[sudo chown -R pi:pi /media/usb]
-		%x[sudo mount -o uid=pi -o gid=pi UUID=#{@id} /media/usb]
+		self.class.run("sudo mkdir -p /media/usb")
+		self.class.run("sudo chown -R pi:pi /media/usb")
+		self.class.run("sudo mount -o uid=pi -o gid=pi UUID=#{@id} /media/usb")
 		true
 	end
 
 	def unmount
-		%x[sudo umount UUID=#{@id}]
-		%x[sudo rmdir /media/usb]
+		self.class.run("sudo umount UUID=#{@id}")
+		self.class.run("sudo rmdir /media/usb")
 		true
 	end
 
+	private
+
+	def refresh
+		update(self.class.get(@id))
+	end
+
 	class << self
+		def run(cmd)
+			raise "#{caller[0]} failed" unless system(cmd)
+		end
+
+		def parse(vol)
+			path = vol[/MOUNTPOINT="([^"]*)"/, 1]
+			{
+				id: vol[/UUID="([^"]+)"/, 1],
+				interface: get_interface(path),
+				name: vol[/NAME="([^"]*)"/, 1],
+				label: vol[/LABEL="([^"]+)"/, 1],
+				fstype: vol[/FSTYPE="([^"]+)"/, 1],
+				path: path,
+				total_space: vol[/SIZE="([^"]+)"/, 1].to_i,
+				available_space: (path.nil? or path.empty?) ? 0 : get_available_space(path),
+			}
+		end
+
 		def list
 			%x[sudo lsblk --nodeps --output NAME,MOUNTPOINT,LABEL,UUID,SIZE,TYPE,FSTYPE --bytes --paths --pairs `readlink -f /dev/disk/by-id/usb*` | grep part].split("\n").map do |vol|
-				self.new(vol)
+				self.new(parse(vol))
 			end
+		end
+
+		def get(id)
+			parse(%x[sudo lsblk --nodeps --output NAME,MOUNTPOINT,LABEL,UUID,SIZE,TYPE,FSTYPE --bytes --paths --pairs `readlink -f /dev/disk/by-uuid/#{id}`].chomp.strip)
 		end
 
 		def get_interface(path)

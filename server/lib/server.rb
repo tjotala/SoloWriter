@@ -70,8 +70,12 @@ class SoloServer < Sinatra::Base
 	#
 	post '/api/volumes/:volume_id/mount' do
 		begin
-			json settings.volumes.mount(resolve(params[:volume_id]))
+			logger.info "mount: attempting #{params[:volume_id]}"
+			res = settings.volumes.mount(resolve(params[:volume_id]))
+			logger.info "mount: got #{res.inspect}"
+			json res
 		rescue RuntimeError => e
+			logger.error e.backtrace.join("\n")
 	 		halt 409, { error: e.message }.to_json
 		rescue NotImplementedError => e
 			halt 400, { error: e.message }.to_json
@@ -89,8 +93,12 @@ class SoloServer < Sinatra::Base
 	#
 	post '/api/volumes/:volume_id/unmount' do
 		begin
-			json settings.volumes.unmount(resolve(params[:volume_id]))
+			logger.info "unmount: attempting #{params[:volume_id]}"
+			res = settings.volumes.unmount(resolve(params[:volume_id]))
+			logger.info "unmount: got #{res.inspect}"
+			json res
 		rescue RuntimeError => e
+			logger.error e.backtrace.join("\n")
 			halt 409, { error: e.message }.to_json
 		rescue NotImplementedError => e
 			halt 409, { error: e.message }.to_json

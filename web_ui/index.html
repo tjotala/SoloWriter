@@ -9,40 +9,40 @@
 		<script type="text/javascript" src="scripts/ui-bootstrap-tpls-2.0.1.min.js"></script>
 		<script type="text/javascript" src="scripts/solo.js"></script>
 	</head>
-	<body ng-controller="DocumentStore">
+	<body ng-controller="SoloWriter">
 		<div id="alert" uib-alert class="alert alert-danger" ng-if="hasAlert()" dismiss-on-timeout="5000" close="clearAlert()">{{alertMessage}}</div>
 		<div id="body">
 			<div id="editor">
-				<textarea id="content" ng-attr-placeholder="Enter text..." ng-model="doc.content" ng-change="setDirty()" ng-style="{ 'font-size': getTextSize() }" ng-class="hasBackgroundImage() ? 'logo' : ''"></textarea>
+				<textarea id="content" ng-attr-placeholder="Enter text..." ng-model="currentDocument.content" ng-change="currentDocument.setDirty()" ng-style="{ 'font-size': settings.getTextSize() }" ng-class="settings.hasBackgroundImage() ? 'logo' : ''"></textarea>
 			</div>
 		</div>
-		<div id="footer" ng-switch="isSettingsMode()">
+		<div id="footer" ng-switch="settings.isSettingsMode()">
 			<div ng-switch-when="false" class="ng-cloak">
 				<div class="pull-left">
 					<button class="btn btn-warning navbar-btn" ng-click="resetDoc(true)"><i class="fa fa-file-text-o"></i>&nbsp;New</button>
 					<button class="btn btn-success navbar-btn" ng-click="openDoc(true)"><i class="fa fa-folder-open-o"></i>&nbsp;Open</button>
-					<button class="btn btn-primary navbar-btn" ng-click="saveDoc(doc.name, doc.content)" ng-disabled="!canSave()"><i class="fa fa-save"></i>&nbsp;Save</button>
-					<input id="name" type="text" placeholder="Enter name..." ng-model="doc.name" ng-minlength="1" ng-maxlength="256" ng-trim="true" ng-change="setDirty()"></input>
+					<button class="btn btn-primary navbar-btn" ng-click="saveDoc()" ng-disabled="!currentDocument.canSave()"><i class="fa fa-save"></i>&nbsp;Save</button>
+					<input id="name" type="text" placeholder="Enter name..." ng-model="currentDocument.name" ng-minlength="1" ng-maxlength="256" ng-trim="true" ng-change="currentDocument.setDirty()"></input>
 				</div>
 				<div class="pull-right">
-					<button class="btn btn-info navbar-btn" ng-click="enterSettings()"><i class="fa fa-gear"></i>&nbsp;Settings</button>
-					<div class="btn-group" role="group" ng-if="isDevelopment()">
+					<button class="btn btn-info navbar-btn" ng-click="settings.enterSettings()"><i class="fa fa-gear"></i>&nbsp;Settings</button>
+					<div class="btn-group" role="group" ng-if="settings.isDevelopment()">
 						<button class="btn btn-warning navbar-btn" ng-click="reload()"><i class="fa fa-refresh"></i>&nbsp;Refresh</button>
 						<button class="btn btn-danger navbar-btn" ng-click="quit()"><i class="fa fa-power-off"></i>&nbsp;Quit</button>
 					</div>
-					<button class="btn btn-danger navbar-btn" ng-click="shutdown()" ng-if="!isDevelopment()"><i class="fa fa-power-off"></i>&nbsp;Power Off</button>
+					<button class="btn btn-danger navbar-btn" ng-click="shutdown()" ng-if="!settings.isDevelopment()"><i class="fa fa-power-off"></i>&nbsp;Power Off</button>
 				</div>
 			</div>
 			<div ng-switch-when="true" class="ng-cloak">
-				<button class="btn btn-danger navbar-btn" ng-click="exitSettings()"><i class="fa fa-chevron-left"></i>&nbsp;Back</button>
+				<button class="btn btn-danger navbar-btn" ng-click="settings.exitSettings()"><i class="fa fa-chevron-left"></i>&nbsp;Back</button>
 				<div class="btn-group" role="group">
-					<button class="btn btn-primary navbar-btn" ng-click="setTextSize(2)"><i class="fa fa-plus"></i></button>
-					<button class="btn btn-primary navbar-btn" ng-click="setTextSize()"><i class="fa fa-font"></i></button>
-					<button class="btn btn-primary navbar-btn" ng-click="setTextSize(-2)"><i class="fa fa-minus"></i></button>
+					<button class="btn btn-primary navbar-btn" ng-click="settings.setTextSize(2)"><i class="fa fa-plus"></i></button>
+					<button class="btn btn-primary navbar-btn" ng-click="settings.setTextSize()"><i class="fa fa-font"></i></button>
+					<button class="btn btn-primary navbar-btn" ng-click="settings.setTextSize(-2)"><i class="fa fa-minus"></i></button>
 				</div>
-				<button class="btn btn-primary navbar-btn" ng-click="toggleBackgroundImage()"><i class="fa" ng-class="hasBackgroundImage() ? 'fa-toggle-on' : 'fa-toggle-off'"></i>&nbsp;<i class="fa fa-image"></i></button>
+				<button class="btn btn-primary navbar-btn" ng-click="settings.toggleBackgroundImage()"><i class="fa" ng-class="settings.hasBackgroundImage() ? 'fa-toggle-on' : 'fa-toggle-off'"></i>&nbsp;<i class="fa fa-image"></i></button>
 				<button class="btn btn-primary navbar-btn" ng-click="selectStorage()"><i class="fa fa-database"></i>&nbsp;Storage</button>
-				<button class="btn btn-primary navbar-btn" ng-click="toggleDevelopment()"><i class="fa" ng-class="isDevelopment() ? 'fa-toggle-on' : 'fa-toggle-off'"></i>&nbsp;<i class="fa fa-gear"></i></button>
+				<button class="btn btn-primary navbar-btn" ng-click="settings.toggleDevelopment()"><i class="fa" ng-class="settings.isDevelopment() ? 'fa-toggle-on' : 'fa-toggle-off'"></i>&nbsp;<i class="fa fa-gear"></i></button>
 			</div>
 		</div>
 	</body>

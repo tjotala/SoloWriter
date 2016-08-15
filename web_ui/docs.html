@@ -1,10 +1,6 @@
 <div class="modal-header bg-primary">
-	<span class="pull-left">
-		<h4 class="modal-title">Saved Documents on {{storage.label}}</h4>
-	</span>
-	<span class="pull-right">
-		<i class="fa fa-close" ng-click="cancel()"></i>
-	</span>
+	<h4 class="modal-title pull-left">Saved Documents on <span ng-click="selectStorage()">{{currentVolume.label}}&nbsp;<i class="fa fa-caret-down"></i></span></h4>
+	<i class="fa fa-close pull-right" ng-click="$dismiss('cancel')"></i>
 </div>
 <div class="modal-body">
 	<table class="table table-condensed table-hover">
@@ -20,7 +16,7 @@
 			<tr class="doc-row" ng-repeat="doc in documents | orderBy: 'name'" ng-model="doc" ng-hide="doc.removed">
 				<td ng-click="selectDoc(doc)">{{doc.name}}</td>
 				<td ng-click="selectDoc(doc)">{{doc.modified | date: 'medium' }}</td>
-				<td ng-click="selectDoc(doc)">{{doc.size}}</td>
+				<td ng-click="selectDoc(doc)">{{doc.size | bytes}}</td>
 				<td><i class="fa fa-trash" ng-click="deleteDoc(doc)"></i></td>
 			</tr>
 		</tbody>

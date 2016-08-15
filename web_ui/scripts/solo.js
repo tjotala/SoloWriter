@@ -4,214 +4,252 @@ function getById(id) {
 	return document.getElementById(id);
 }
 
-function setFocus(id) {
-	getById(id).focus();
-}
-
-function cloneObject(obj) {
-	return JSON.parse(JSON.stringify(obj)); // hokey JS way to dupe an object
-}
-
-app.controller('DocumentStore', function DocumentStore($scope, $http, $uibModal) {
-	var contentStyle = window.getComputedStyle(getById("content"));
-	$scope.modes = { main: 0, settings: 1 };
-	$scope.defaults = {
+app.factory('Settings', function($window) {
+	var modes = {
+		main: 0,
+		settings: 1
+	};
+	var defaults = {
 		text: {
-			fontFamily: contentStyle.getPropertyValue('font-family'),
-			fontSize: parseFloat(contentStyle.getPropertyValue('font-size')),
+			fontFamily: $window.getComputedStyle(getById("content")).getPropertyValue('font-family'),
+			fontSize: parseFloat($window.getComputedStyle(getById("content")).getPropertyValue('font-size')),
 			minSize: 10, // px
 			maxSize: 50  // px
 		},
 		backgroundImage: true,
-		mode: $scope.modes.main
-	};
-	$scope.settings = cloneObject($scope.defaults);
-	$scope.development = true;
-	$scope.storage = undefined;
-
-	$scope.isDevelopment = function() {
-		return $scope.development;
+		mode: modes.main
 	};
 
-	$scope.toggleDevelopment = function() {
-		return $scope.development = !$scope.development;
-	};
+	var fontFamily = defaults.text.fontFamily;
+	var fontSize = defaults.text.fontSize;
+	var backgroundImage = defaults.backgroundImage;
+	var mode = defaults.mode;
+	var development = true;
 
-	$scope.getList = function(url, callback) {
-		$http.get(url).then(
-			function success(response) {
-				callback(response.data);
-			},
-			function failure(response) {
-				callback([ ]);
+	return {
+		isDevelopment: function() {
+			return development;
+		},
+
+		toggleDevelopment: function() {
+			return development = !development;
+		},
+
+		enterSettings: function() {
+			mode = modes.settings;
+		},
+
+		exitSettings: function() {
+			mode = modes.main;
+		},
+
+		isSettingsMode: function() {
+			return mode == modes.settings;
+		},
+
+		getTextSize: function() {
+			return fontSize + 'px';
+		},
+
+		setTextSize: function(delta) {
+			if (delta == 0 || delta == undefined) {
+				fontSize = defaults.text.fontSize;
+			} else {
+				fontSize = Math.min(Math.max(Math.round(fontSize + delta), defaults.text.minSize), defaults.text.maxSize);
 			}
-		);
-	};
+		},
 
-	$scope.docPath = function(name, volume) {
-		return "/api/volumes/" + (volume ? volume.id : $scope.storage.id) + "/files/" + encodeURIComponent(name);
-	};
+		setBackgroundImage: function() {
+			return backgroundImage = true;
+		},
 
-	$scope.listDocs = function(callback) {
-		$scope.getList($scope.docPath(""), callback);
-	};
+		clearBackgroundImage: function() {
+			return backgroundImage = false;
+		},
 
-	$scope.listVolumes = function(callback) {
-		$scope.getList("/api/volumes", callback);
-	};
+		toggleBackgroundImage: function() {
+			return backgroundImage = !backgroundImage;
+		},
 
-	$scope.listNetworks = function(callback) {
-		$scope.getList("/api/networks", callback);
+		hasBackgroundImage: function() {
+			return backgroundImage;
+		}
 	};
+});
 
-	$scope.getLocalVolume = function(callback) {
-		$http.get("/api/volumes/local").then(
-			function success(response) {
-				callback(response.data);
-			},
-			function failure(response) {
+app.factory('Volume', function($http) {
+	return function(volume) {
+		this.setData = function(volume) {
+			if (volume) {
+				angular.extend(this, volume);
 			}
-		);
-	};
+			return this;
+		};
 
-	$scope.mountVolume = function(volume, callback) {
-		$http.post("/api/volumes/" + volume.id + "/mount").then(
-			function success(response) {
-				callback(response.data);
-			},
-			function failure(response) {
+		this.getPath = function(id) {
+			return "/api/volumes/" + (id ? id : this.id) + "/";
+		};
+
+		this.load = function(id) {
+			var self = this;
+			$http.get(self.getPath(id)).then(function success(response) {
+				return this.setData(response.data);
+			});
+		};
+
+		this.getIcon = function() {
+			switch (this.id) {
+				case 'local': return 'fa-hdd-o';
+				case 'dropbox': return 'fa-dropbox';
+				case 'google': return 'fa-google';
+				case 'amazon': return 'fa-amazon';
 			}
-		);
-	};
+			return (this.interface == 'usb') ? 'fa-usb' : ((this.interface == 'network') ? 'fa-server' : 'fa-share-alt');
+		};
 
-	$scope.unmountVolume = function(volume, callback) {
-		$http.post("/api/volumes/" + volume.id + "/unmount").then(
-			function success(response) {
-				callback(response.data);
-			},
-			function failure(response) {
+		this.isLocal = function() {
+			return this.id == 'local';
+		};
+
+		this.mount = function() {
+			return $http.post(this.getPath() + "mount");
+		};
+
+		this.unmount = function() {
+			return $http.post(this.getPath() + "unmount");
+		};
+
+		this.setData(volume);
+	};
+});
+
+app.factory('Volumes', function($http, Volume) {
+	return {
+		getPath: function() {
+			return "/api/volumes/";
+		},
+
+		getList: function() {
+			return $http.get(this.getPath()).then(function success(response) {
+				return response.data.map(function(v, i, a) {
+					return new Volume(v);
+				});
+			});
+		},
+
+		getLocal: function() {
+			return $http.get(this.getPath() + "/local").then(function success(response) {
+				return new Volume(response.data);
+			});
+		}
+	};
+});
+
+app.factory('Document', function($http) {
+	return function(doc) {
+		this.setData = function(doc) {
+			angular.extend(this, doc);
+			this.clearDirty();
+			return self;
+		};
+
+		this.getPath = function(volume, name) {
+			return volume.getPath() + "files/" + encodeURIComponent(name ? name : this.name);
+		};
+
+		this.reset = function(doc) {
+			if (doc == undefined) {
+				doc = {
+					name: undefined,
+					content: undefined,
+					size: 0,
+					modified: new Date()
+				};
 			}
-		);
-	};
+			return this.setData(doc);
+		};
 
-	$scope.loadDoc = function(name) {
-		$http.get($scope.docPath(name)).then(
-			function success(response) {
-				$scope.doc = {
+		this.load = function(volume, name) {
+			var self = this;
+			return $http.get(this.getPath(volume, name)).then(function success(response) {
+				return self.reset({
 					name: name,
 					content: response.data,
 					size: response.headers("Content-Length"),
-					modified: new Date(Date.parse(response.headers("Last-Modified"))),
-					dirty: false
-				};
-				setFocus("content");
-				$scope.settings.backgroundImage = false;
-			},
-			function failure(response) {
-				$scope.resetDoc();
-				$scope.setAlert("Failed to load document, reason: " + response);
-			}
-		);
-	};
-
-	$scope.saveDoc = function(name, content) {
-		$http.put($scope.docPath(name), content).then(
-			function success(response) {
-				$scope.doc.dirty = false;
-			},
-			function failure(response) {
-				$scope.setAlert("Failed to save document, reason: " + response);
-			}
-		);
-	};
-
-	$scope.deleteDoc = function(name) {
-		$http.delete($scope.docPath(name)).then(
-			function success(response) {
-				$scope.setAlert("Deleted document '" + name + "'");
-			},
-			function failure(response) {
-				$scope.resetDoc();
-				$scope.setAlert("Failed to delete document, reason: " + response);
-			}
-		);
-	};
-
-	$scope.setDirty = function() {
-		$scope.doc.dirty = true;
-	};
-
-	$scope.canSave = function() {
-		return $scope.doc.dirty && $scope.doc.name != '' && $scope.doc.content != '';
-	}
-
-	$scope.shouldSave = function() {
-		return $scope.doc.dirty;
-	}
-
-	$scope.setAlert = function(msg) {
-		$scope.alertMessage = msg;
-	};
-
-	$scope.clearAlert = function() {
-		$scope.alertMessage = undefined;
-		setFocus("content");
-	};
-
-	$scope.hasAlert = function() {
-		return $scope.alertMessage != undefined;
-	};
-
-	$scope.resetDoc = function(ask) {
-		if (ask && $scope.doc.dirty) {
-			$scope.confirm({
-				name: $scope.doc.name,
-				ok: function() {
-					$scope.resetDoc(false); // call myself without prompting
-				}
+					modified: new Date(Date.parse(response.headers("Last-Modified")))
+				});
 			});
-		} else {
-			$scope.doc = {
-				name: undefined,
-				content: undefined,
-				size: undefined,
-				modified: undefined,
-				dirty: false
-			};
-			setFocus("content");
-			$scope.settings.backgroundImage = true;
+		};
+
+		this.save = function(volume) {
+			var self = this;
+			return $http.put(this.getPath(volume), self.content).then(function success(response) {
+				return self.clearDirty();
+			});
+		};
+
+		this.remove = function(volume) {
+			return $http.delete(this.getPath(volume));
+		};
+
+		this.isDirty = function() {
+			return this.dirty;
+		};
+
+		this.clearDirty = function() {
+			this.dirty = false;
+			return this;
+		};
+
+		this.setDirty = function() {
+			this.dirty = true;
+			return this;
+		};
+
+		this.canSave = function() {
+			return this.isDirty() && this.name != '' && this.content != '';
+		};
+
+		this.shouldSave = function() {
+			return this.isDirty();
+		};
+
+		this.setData(doc);
+	}
+});
+
+app.factory('Documents', function($http, Document) {
+	return {
+		getPath: function(volume) {
+			return volume.getPath() + "files/";
+		},
+
+		getList: function(volume) {
+			var self = this;
+			return $http.get(this.getPath(volume)).then(function success(response) {
+				return response.data.map(function(v, i, a) {
+					return new Document(v);
+				});
+			});
 		}
 	};
+});
 
-	$scope.openDoc = function(ask) {
-		if (ask && $scope.doc.dirty) {
-			$scope.confirm({
-				name: $scope.doc.name,
-				ok: function() {
-					$scope.openDoc(false); // call myself without prompting
-				}
-			});
-		} else {
-			$scope.listDocs(function(documents) {
-				$scope.documents = documents;
-			});
+app.controller('SoloWriter', function($scope, $window, $http, $uibModal, Settings, Volumes, Volume, Document, Confirm) {
+	$scope.settings = Settings;
+	$scope.currentVolume = undefined;
+	$scope.currentDocument = new Document();
 
-			var dlg = $uibModal.open({
-				animation: false,
-				templateUrl: 'docs.html',
-				controller: 'DocumentsCtrl',
-				scope: $scope,
-				size: 'lg'
-			});
+	Volumes.getLocal().then(function success(local) {
+		$scope.currentVolume = local;
+	});
 
-			dlg.result.then(function (selected) {
-				$scope.loadDoc(selected);
-			});
-		}
+	$scope.setFocus = function() {
+		getById("content").focus();
 	};
 
 	$scope.reload = function() {
-		window.location.reload();
+		$window.location.reload();
 	};
 
 	$scope.quit = function() {
@@ -222,86 +260,184 @@ app.controller('DocumentStore', function DocumentStore($scope, $http, $uibModal)
 		$http.post("/api/shutdown");
 	};
 
-	$scope.enterSettings = function() {
-		$scope.settings.mode = $scope.modes.settings;
+	$scope.setAlert = function(msg) {
+		$scope.alertMessage = msg;
 	};
 
-	$scope.exitSettings = function() {
-		$scope.settings.mode = $scope.modes.main;
+	$scope.clearAlert = function() {
+		$scope.alertMessage = undefined;
+		$scope.setFocus();
 	};
 
-	$scope.isSettingsMode = function() {
-		return $scope.settings.mode == $scope.modes.settings;
+	$scope.hasAlert = function() {
+		return $scope.alertMessage != undefined;
 	};
 
-	$scope.getTextSize = function() {
-		return $scope.settings.text.fontSize + 'px';
-	};
-
-	$scope.setTextSize = function(delta) {
-		if (delta == 0 || delta == undefined) {
-			$scope.settings.text.fontSize = $scope.defaults.text.fontSize;
+	$scope.resetDoc = function(ask) {
+		if (ask && $scope.currentDocument.isDirty()) {
+			Confirm.confirm({
+				name: $scope.currentDocument.name
+			}).then(function ok() {
+				$scope.resetDoc(false); // call myself without prompting
+			});
 		} else {
-			$scope.settings.text.fontSize = Math.min(Math.max(Math.round($scope.settings.text.fontSize + delta), $scope.defaults.text.minSize), $scope.defaults.text.maxSize);
+			$scope.currentDocument.reset();
+			$scope.setFocus();
+			Settings.setBackgroundImage();
 		}
 	};
 
-	$scope.toggleBackgroundImage = function() {
-		return $scope.settings.backgroundImage = !$scope.settings.backgroundImage;
-	};
-
-	$scope.hasBackgroundImage = function() {
-		return $scope.settings.backgroundImage;
-	};
-
-	$scope.getStorageIcon = function(volume) {
-		switch (volume.id) {
-			case 'local': return 'fa-hdd-o';
-			case 'dropbox': return 'fa-dropbox';
-			case 'google': return 'fa-google';
-			case 'amazon': return 'fa-amazon';
+	$scope.openDoc = function(ask) {
+		if (ask && $scope.currentDocument.isDirty()) {
+			Confirm.confirm({
+				name: $scope.currentDocument.name
+			}).then(function ok() {
+				$scope.openDoc(false); // call myself without prompting
+			});
+		} else {
+			$uibModal.open({
+				animation: false,
+				templateUrl: 'docs.html',
+				controller: 'DocumentsCtrl',
+				resolve: {
+					currentVolume: function() {
+						return $scope.currentVolume;
+					}
+				}
+			}).result.then(function success(selected) {
+				$scope.currentDocument.load(selected.volume, selected.doc.name);
+			}).finally(function() {
+				$scope.setFocus();
+			});
 		}
-		return (volume.interface == 'usb') ? 'fa-usb' : ((volume.interface == 'network') ? 'fa-server' : 'fa-share-alt');
 	};
 
-	$scope.getSelectedStorage = function() {
-		return $scope.storage;
+	$scope.saveDoc = function() {
+		$scope.currentDocument.save($scope.currentVolume);
+		$scope.setFocus();
 	};
 
-	$scope.isStorageSelected = function(volume) {
-		return $scope.storage.id == volume.id;
+	$scope.selectStorage = function() {
+		$uibModal.open({
+			animation: false,
+			templateUrl: '/storage.html',
+			controller: 'StorageCtrl',
+			resolve: {
+				currentVolume: function() {
+					return $scope.currentVolume;
+				}
+			}
+		}).result.then(function success(selected) {
+			$scope.currentVolume = selected.volume;
+		}).finally(function() {
+			$scope.setFocus();
+		});
 	};
 
-	$scope.refreshVolumes = function() {
-		$scope.listVolumes(function(volumes) {
-			$scope.volumes = volumes;
+	$scope.clearAlert();
+});
+
+app.controller('DocumentsCtrl', function ($scope, $uibModal, $uibModalInstance, Documents, currentVolume, Confirm) {
+	$scope.currentVolume = currentVolume;
+	$scope.documents = undefined;
+	$scope.selected = undefined;
+	$scope.loading = false;
+
+	$scope.refreshDocuments = function() {
+		$scope.loading = true;
+		Documents.getList($scope.currentVolume).then(function success(list) {
+			$scope.documents = list;
+		}).finally(function() {
+			$scope.loading = false;
 		});
 	};
 
 	$scope.selectStorage = function() {
-		$scope.refreshVolumes();
-
-		var dlg = $uibModal.open({
+		$uibModal.open({
 			animation: false,
-			templateUrl: 'storage.html',
+			templateUrl: '/storage.html',
 			controller: 'StorageCtrl',
-			scope: $scope
-		});
-
-		dlg.result.then(function (selected) {
-			$scope.storage = selected;
+			resolve: {
+				currentVolume: function() {
+					return $scope.currentVolume;
+				}
+			}
+		}).result.then(function (selected) {
+			$scope.currentVolume = selected.volume;
+			$scope.refreshDocuments();
 		});
 	};
 
-	$scope.confirm = function(opts) {
+	$scope.selectDoc = function(doc) {
+		$uibModalInstance.close({ doc: doc, volume: $scope.currentVolume });
+	}
+
+	$scope.deleteDoc = function(doc) {
+		Confirm.confirm({
+			name: doc.name,
+			message: "Deleting document '" + doc.name + "'. Are you sure?"
+		}).then(function ok() {
+			doc.remove($scope.currentVolume);
+			doc.removed = true;
+		});
+	}
+
+	$scope.refreshDocuments();
+});
+
+app.controller('StorageCtrl', function ($scope, $uibModalInstance, Volumes, currentVolume) {
+	$scope.volumes = undefined;
+	$scope.selected = currentVolume;
+	$scope.loading = false;
+
+	$scope.refreshVolumes = function() {
+		$scope.loading = true;
+		Volumes.getList().then(function success(list) {
+			$scope.volumes = list;
+		}).finally(function() {
+			$scope.loading = false;
+		});
+	};
+
+	$scope.isVolumeSelected = function(volume) {
+		return $scope.selected.id == volume.id;
+	};
+
+	$scope.selectVolume = function(volume) {
+		$scope.selected = volume;
+		$uibModalInstance.close({ volume: volume });
+	};
+
+	$scope.mountVolume = function(volume) {
+		$scope.loading = volume.id;
+		volume.mount().then(function success(response) {
+			$scope.volumes = Volumes.parseList(response);
+		}).finally(function() {
+			$scope.loading = false;
+		});
+	};
+
+	$scope.unmountVolume = function(volume) {
+		$scope.loading = volume.id;
+		volume.unmount().then(function success(response) {
+			$scope.volumes = Volumes.parseList(response);
+		}).finally(function() {
+			$scope.loading = false;
+		});
+	};
+
+	$scope.refreshVolumes();
+});
+
+app.service('Confirm', function($uibModal) {
+	this.confirm = function(opts) {
 		opts.title || (opts.title = "Confirm");
 		opts.message || (opts.message = "Unsaved modifications in document '" + opts.name + "' will be lost. Are you sure?");
-		opts.cancel || (opts.cancel = function() { setFocus("content"); });
-		$scope.prompt(opts);
+		return this.prompt(opts);
 	};
 
-	$scope.prompt = function(opts) {
-		var dlg = $uibModal.open({
+	this.prompt = function(opts) {
+		return $uibModal.open({
 			animation: false,
 			templateUrl: 'prompt.html',
 			controller: 'PromptCtrl',
@@ -313,88 +449,20 @@ app.controller('DocumentStore', function DocumentStore($scope, $http, $uibModal)
 					return opts.message;
 				}
 			}
-		});
-
-		dlg.result.then(opts.ok, opts.cancel);
-	};
-
-	$scope.getLocalVolume(function(volume) {
-		$scope.storage = volume;
-	});
-	$scope.resetDoc();
-});
-
-app.controller('DocumentsCtrl', function ($scope, $uibModalInstance) {
-	$scope.selectDoc = function(doc) {
-		$uibModalInstance.close(doc.name);
-	};
-
-	$scope.deleteDoc = function(doc) {
-		$scope.confirm({
-			name: doc.name,
-			ok: function() {
-				$scope.deleteDoc(doc.name);
-				doc.removed = true;
-			},
-			message: "Deleting document '" + doc.name + "'. Are you sure?"
-		});
-	};
-
-	$scope.cancel = function () {
-		$uibModalInstance.dismiss('cancel');
-	};
-});
-
-app.controller('StorageCtrl', function ($scope, $uibModalInstance) {
-	$scope.selected = $scope.getSelectedStorage();
-
-	$scope.isVolumeSelected = function(volume) {
-		return $scope.selected.id == volume.id;
-	};
-
-	$scope.selectVolume = function(volume) {
-		$scope.selected = volume;
-	};
-
-	$scope.mountVolume = function(volume) {
-		$scope.$parent.mountVolume(volume, function() {
-			$scope.refreshVolumes();
-		});
-	};
-
-	$scope.unmountVolume = function(volume) {
-		$scope.$parent.unmountVolume(volume, function() {
-			$scope.refreshVolumes();
-		});
-	};
-
-	$scope.ok = function() {
-		$uibModalInstance.close($scope.selected);
-	};
-
-	$scope.cancel = function () {
-		$uibModalInstance.dismiss('cancel');
+		}).result;
 	};
 });
 
 app.controller('PromptCtrl', function ($scope, $uibModalInstance, title, message) {
 	$scope.title = title;
 	$scope.message = message;
-
-	$scope.ok = function() {
-		$uibModalInstance.close('ok');
-	};
-
-	$scope.cancel = function () {
-		$uibModalInstance.dismiss('cancel');
-	};
 });
 
 app.filter('bytes', function() {
 	return function(bytes, precision) {
 		if (bytes == 0 || isNaN(parseFloat(bytes)) || !isFinite(bytes)) return '-';
 		if (typeof precision === 'undefined') precision = 1;
-		var units = ['bytes', 'kB', 'MB', 'GB', 'TB', 'PB'],
+		var units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'],
 			number = Math.floor(Math.log(bytes) / Math.log(1024));
 		return (bytes / Math.pow(1024, Math.floor(number))).toFixed(precision) +  ' ' + units[number];
 	}

@@ -20,16 +20,16 @@ class Volumes
 
 	def by_id(id)
 		vol = @volumes.find { |vol| vol.id == id }
-		vol or raise "unknwon volume #{id}"
+		vol or raise "unknown volume #{id}"
 	end
 
 	def mount(volume)
-		return refresh unless volume.mount
+		return refresh if volume.mount
 		raise "failed to mount volume #{volume.id}"
 	end
 
 	def unmount(volume)
-		return refresh unless volume.unmount
+		return refresh if volume.unmount
 		raise "failed to unmount volume #{volume.id}"
 	end
 
