@@ -12,5 +12,14 @@ class Network
 		@encryption = opts[:encryption] || false
 		@quality = opts[:quality] || 0
 	end
-end
 
+	def to_json(*args)
+		{
+			interface: @interface,
+			type: @type,
+			ssid: @ssid,
+			encryption: @encryption,
+			quality: @quality,
+		}.to_json(args)
+	end
+end
