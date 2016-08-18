@@ -1,114 +1,145 @@
-var app = angular.module('App', [ 'ui.bootstrap' ]);
+var app = angular.module("App", [ "ui.bootstrap" ]);
 
 function getById(id) {
 	return document.getElementById(id);
 }
 
-app.factory('Settings', function($window) {
-	var modes = {
-		main: 0,
-		settings: 1
-	};
-	var defaults = {
-		text: {
-			fontFamily: $window.getComputedStyle(getById("content")).getPropertyValue('font-family'),
-			fontSize: parseFloat($window.getComputedStyle(getById("content")).getPropertyValue('font-size')),
-			minSize: 10, // px
-			maxSize: 50  // px
-		},
-		backgroundImage: true,
-		mode: modes.main
-	};
+function now8601() {
+	return (new Date()).toISOString();
+}
 
-	var fontFamily = defaults.text.fontFamily;
-	var fontSize = defaults.text.fontSize;
-	var backgroundImage = defaults.backgroundImage;
-	var mode = defaults.mode;
-	var development = true;
+app.constant("CONTENT_ID", "content");
+app.constant("LOCAL_VOLUME_ID", "local");
+app.constant("DEFAULT_DOCUMENT_NAME", "NoName");
+app.constant("AUTOSAVE_FREQUENCY_NEVER", 0);
+
+app.factory("Settings", function($window, $interpolate, CONTENT_ID, DEFAULT_DOCUMENT_NAME) {
+	var defFontSize = parseFloat($window.getComputedStyle(getById(CONTENT_ID)).getPropertyValue("font-size"));
+	var minFontSize = 10; // px
+	var maxFontSize = 50; // px
+	var fontSize = defFontSize;
+	var fontFamily = $window.getComputedStyle(getById(CONTENT_ID)).getPropertyValue("font-family");
+	var backgroundImage = true;
+	var autoSave = {
+		frequency: 1, // minutes
+		tempName: {
+			use: true,
+			pattern: "{{name}}.autosave" // this is run through $interpolate(pattern)({ name: <filename> })
+		}
+	}
+	var mainMode = true; // true = main, false = settings
+	var devMode = true;  // true = development mode, false = not development mode
 
 	return {
 		isDevelopment: function() {
-			return development;
+			return devMode;
 		},
 
 		toggleDevelopment: function() {
-			return development = !development;
+			devMode = !devMode;
 		},
 
 		enterSettings: function() {
-			mode = modes.settings;
+			mainMode = false;
 		},
 
 		exitSettings: function() {
-			mode = modes.main;
+			mainMode = true;
 		},
 
 		isSettingsMode: function() {
-			return mode == modes.settings;
+			return !mainMode;
 		},
 
 		getTextSize: function() {
-			return fontSize + 'px';
+			return fontSize + "px";
 		},
 
 		setTextSize: function(delta) {
-			if (delta == 0 || delta == undefined) {
-				fontSize = defaults.text.fontSize;
+			if (delta == 0 || angular.isDefined(delta)) {
+				fontSize = defFontSize;
 			} else {
-				fontSize = Math.min(Math.max(Math.round(fontSize + delta), defaults.text.minSize), defaults.text.maxSize);
+				fontSize = Math.min(Math.max(Math.round(fontSize + delta), minFontSize), maxFontSize);
 			}
 		},
 
 		setBackgroundImage: function() {
-			return backgroundImage = true;
+			backgroundImage = true;
 		},
 
 		clearBackgroundImage: function() {
-			return backgroundImage = false;
+			backgroundImage = false;
 		},
 
 		toggleBackgroundImage: function() {
-			return backgroundImage = !backgroundImage;
+			backgroundImage = !backgroundImage;
 		},
 
 		hasBackgroundImage: function() {
 			return backgroundImage;
+		},
+
+		getAutoSaveFrequency: function() {
+			return autoSave.frequency;
+		},
+
+		getAutoSaveFrequencyAsMs: function() {
+			return autoSave.frequency * 60 * 1000;
+		},
+
+		setAutoSaveFrequency: function(freq) {
+			autoSave.frequency = freq;
+		},
+
+		getAutoSaveTempName: function(name) {
+			return {
+				use: autoSave.tempName.use,
+				pattern: autoSave.tempName.pattern,
+				name: $interpolate(autoSave.tempName.pattern)({ name: angular.isDefined(name) ? name : DEFAULT_DOCUMENT_NAME})
+			};
+		},
+
+		setAutoSaveTempName: function(useTemp, pattern) {
+			autoSave.tempName.use = useTemp;
+			if (angular.isDefined(pattern)) {
+				autoSave.tempName.pattern = pattern;
+			}
 		}
 	};
 });
 
-app.factory('Volume', function($http) {
+app.factory("Volume", function($http, LOCAL_VOLUME_ID) {
 	return function(volume) {
 		this.setData = function(volume) {
-			if (volume) {
+			if (angular.isDefined(volume)) {
 				angular.extend(this, volume);
 			}
 			return this;
 		};
 
-		this.getPath = function(id) {
-			return "/api/volumes/" + (id ? id : this.id) + "/";
+		this.getPath = function(newId) {
+			return "/api/volumes/" + (angular.isDefined(newId) ? newId : this.id) + "/";
 		};
 
-		this.load = function(id) {
+		this.load = function(newId) {
 			var self = this;
-			$http.get(self.getPath(id)).then(function success(response) {
+			$http.get(self.getPath(newId)).then(function success(response) {
 				return this.setData(response.data);
 			});
 		};
 
 		this.getIcon = function() {
 			switch (this.id) {
-				case 'local': return 'fa-hdd-o';
-				case 'dropbox': return 'fa-dropbox';
-				case 'google': return 'fa-google';
-				case 'amazon': return 'fa-amazon';
+				case LOCAL_VOLUME_ID: return "fa-hdd-o";
+				case "dropbox": return "fa-dropbox";
+				case "google": return "fa-google";
+				case "amazon": return "fa-amazon";
 			}
-			return (this.interface == 'usb') ? 'fa-usb' : ((this.interface == 'network') ? 'fa-server' : 'fa-share-alt');
+			return (this.interface == "usb") ? "fa-usb" : ((this.interface == "network") ? "fa-server" : "fa-share-alt");
 		};
 
 		this.isLocal = function() {
-			return this.id == 'local';
+			return this.id == LOCAL_VOLUME_ID;
 		};
 
 		this.mount = function() {
@@ -123,7 +154,7 @@ app.factory('Volume', function($http) {
 	};
 });
 
-app.factory('Volumes', function($http, Volume) {
+app.factory("Volumes", function($http, Volume, LOCAL_VOLUME_ID) {
 	return {
 		getPath: function() {
 			return "/api/volumes/";
@@ -143,14 +174,14 @@ app.factory('Volumes', function($http, Volume) {
 		},
 
 		getLocal: function() {
-			return $http.get(this.getPath() + "/local").then(function success(response) {
+			return $http.get(this.getPath() + "/" + LOCAL_VOLUME_ID).then(function success(response) {
 				return new Volume(response.data);
 			});
 		}
 	};
 });
 
-app.factory('Document', function($http) {
+app.factory("Document", function($http, DEFAULT_DOCUMENT_NAME) {
 	return function(doc) {
 		this.setData = function(doc) {
 			angular.extend(this, doc);
@@ -158,12 +189,16 @@ app.factory('Document', function($http) {
 			return self;
 		};
 
-		this.getPath = function(volume, name) {
-			return volume.getPath() + "files/" + encodeURIComponent(name ? name : this.name);
+		this.getPath = function(volume, newName) {
+			return volume.getPath() + "files/" + encodeURIComponent(angular.isDefined(newName) ? newName : this.name);
+		};
+
+		this.getName = function() {
+			return angular.isDefined(this.name) ? this.name : DEFAULT_DOCUMENT_NAME;
 		};
 
 		this.reset = function(doc) {
-			if (doc == undefined) {
+			if (!angular.isDefined(doc)) {
 				doc = {
 					name: undefined,
 					content: undefined,
@@ -186,10 +221,14 @@ app.factory('Document', function($http) {
 			});
 		};
 
-		this.save = function(volume) {
+		this.save = function(volume, nameOverride, autoSave) {
 			var self = this;
-			return $http.put(this.getPath(volume), self.content).then(function success(response) {
-				return self.clearDirty();
+			return $http.put(this.getPath(volume, nameOverride), self.content).then(function success(response) {
+				if (angular.isDefined(autoSave) && autoSave) {
+					return self;
+				} else {
+					return self.clearDirty();
+				}
 			});
 		};
 
@@ -212,7 +251,7 @@ app.factory('Document', function($http) {
 		};
 
 		this.canSave = function() {
-			return this.isDirty() && this.name != '' && this.content != '';
+			return this.isDirty() && this.name != "" && this.content != "";
 		};
 
 		this.shouldSave = function() {
@@ -223,7 +262,7 @@ app.factory('Document', function($http) {
 	}
 });
 
-app.factory('Documents', function($http, Document) {
+app.factory("Documents", function($http, Document) {
 	return {
 		getPath: function(volume) {
 			return volume.getPath() + "files/";
@@ -240,17 +279,18 @@ app.factory('Documents', function($http, Document) {
 	};
 });
 
-app.controller('SoloWriter', function($scope, $window, $http, $uibModal, Settings, Volumes, Volume, Document, Confirm) {
+app.controller("SoloWriter", function($scope, $window, $log, $http, $interval, $uibModal, Settings, Volumes, Volume, Document, Confirm, CONTENT_ID, AUTOSAVE_FREQUENCY_NEVER) {
 	$scope.settings = Settings;
 	$scope.currentVolume = undefined;
 	$scope.currentDocument = new Document();
+	var autoSaver = undefined;
 
 	Volumes.getLocal().then(function success(local) {
 		$scope.currentVolume = local;
 	});
 
 	$scope.setFocus = function() {
-		getById("content").focus();
+		getById(CONTENT_ID).focus();
 	};
 
 	$scope.reload = function() {
@@ -275,7 +315,7 @@ app.controller('SoloWriter', function($scope, $window, $http, $uibModal, Setting
 	};
 
 	$scope.hasAlert = function() {
-		return $scope.alertMessage != undefined;
+		return angular.isDefined($scope.alertMessage);
 	};
 
 	$scope.resetDoc = function(ask) {
@@ -302,8 +342,8 @@ app.controller('SoloWriter', function($scope, $window, $http, $uibModal, Setting
 		} else {
 			$uibModal.open({
 				animation: false,
-				templateUrl: 'docs.html',
-				controller: 'DocumentsCtrl',
+				templateUrl: "docs.html",
+				controller: "DocumentsCtrl",
 				resolve: {
 					currentVolume: function() {
 						return $scope.currentVolume;
@@ -317,16 +357,16 @@ app.controller('SoloWriter', function($scope, $window, $http, $uibModal, Setting
 		}
 	};
 
-	$scope.saveDoc = function() {
-		$scope.currentDocument.save($scope.currentVolume);
+	$scope.saveDoc = function(name, autoSave) {
+		$scope.currentDocument.save($scope.currentVolume, name, autoSave);
 		$scope.setFocus();
 	};
 
 	$scope.selectStorage = function() {
 		$uibModal.open({
 			animation: false,
-			templateUrl: '/storage.html',
-			controller: 'StorageCtrl',
+			templateUrl: "storage.html",
+			controller: "StorageCtrl",
 			resolve: {
 				currentVolume: function() {
 					return $scope.currentVolume;
@@ -339,10 +379,55 @@ app.controller('SoloWriter', function($scope, $window, $http, $uibModal, Setting
 		});
 	};
 
+	$scope.selectAutoSave = function() {
+		$uibModal.open({
+			animation: false,
+			templateUrl: "autosave.html",
+			controller: "AutoSaveCtrl",
+			resolve: {
+				autoSave: function() {
+					return {
+						frequency: $scope.settings.getAutoSaveFrequency(),
+						tempName: angular.copy($scope.settings.getAutoSaveTempName())
+					};
+				}
+			}
+		}).result.then(function success(selected) {
+			$scope.settings.setAutoSaveFrequency(selected.frequency);
+			$scope.settings.setAutoSaveTempName(selected.tempName);
+		}).finally(function() {
+			$scope.setFocus();
+		});
+	};
+
+	$scope.startAutoSave = function() {
+		$scope.stopAutoSave();
+		if ($scope.settings.getAutoSaveFrequency() != AUTOSAVE_FREQUENCY_NEVER) {
+			$log.debug(now8601() + " -- starting autosaver");
+			autoSaver = $interval(function() {
+				if ($scope.currentDocument.shouldSave()) {
+					$log.debug(now8601() + " -- autosaving");
+					$scope.currentDocument.save($scope.currentVolume, $scope.settings.getAutoSaveTempName($scope.currentDocument.getName()).name, true);
+				} else {
+					$log.debug(now8601() + " -- skipped autosave, nothing to save");
+				}
+			}, $scope.settings.getAutoSaveFrequencyAsMs());
+		}
+	};
+
+	$scope.stopAutoSave = function() {
+		if (angular.isDefined(autoSaver)) {
+			$log.debug(now8601() + " -- stopping autosaver");
+			$interval.cancel(autoSaver);
+			autoSaver = undefined;
+		}
+	}
+
 	$scope.clearAlert();
+	$scope.startAutoSave();
 });
 
-app.controller('DocumentsCtrl', function ($scope, $uibModal, $uibModalInstance, Documents, currentVolume, Confirm) {
+app.controller("DocumentsCtrl", function ($scope, $uibModal, $uibModalInstance, Documents, currentVolume, Confirm) {
 	$scope.currentVolume = currentVolume;
 	$scope.documents = undefined;
 	$scope.selected = undefined;
@@ -360,8 +445,8 @@ app.controller('DocumentsCtrl', function ($scope, $uibModal, $uibModalInstance, 
 	$scope.selectStorage = function() {
 		$uibModal.open({
 			animation: false,
-			templateUrl: '/storage.html',
-			controller: 'StorageCtrl',
+			templateUrl: "storage.html",
+			controller: "StorageCtrl",
 			resolve: {
 				currentVolume: function() {
 					return $scope.currentVolume;
@@ -390,7 +475,7 @@ app.controller('DocumentsCtrl', function ($scope, $uibModal, $uibModalInstance, 
 	$scope.refreshDocuments();
 });
 
-app.controller('StorageCtrl', function ($scope, $uibModalInstance, Volumes, currentVolume) {
+app.controller("StorageCtrl", function ($scope, $uibModalInstance, Volumes, currentVolume) {
 	$scope.volumes = undefined;
 	$scope.selected = currentVolume;
 	$scope.loading = false;
@@ -434,7 +519,17 @@ app.controller('StorageCtrl', function ($scope, $uibModalInstance, Volumes, curr
 	$scope.refreshVolumes();
 });
 
-app.service('Confirm', function($uibModal) {
+app.controller("AutoSaveCtrl", function ($scope, $uibModalInstance, autoSave, AUTOSAVE_FREQUENCY_NEVER) {
+	$scope.never = AUTOSAVE_FREQUENCY_NEVER;
+	$scope.frequency = autoSave.frequency;
+	$scope.tempName = angular.copy(autoSave.tempName);
+
+	$scope.save = function() {
+		$uibModalInstance.close({ frequency: $scope.frequency, tempName: angular.copy($scope.tempName) });
+	};
+});
+
+app.service("Confirm", function($uibModal) {
 	this.confirm = function(opts) {
 		opts.title || (opts.title = "Confirm");
 		opts.message || (opts.message = "Unsaved modifications in document '" + opts.name + "' will be lost. Are you sure?");
@@ -444,8 +539,8 @@ app.service('Confirm', function($uibModal) {
 	this.prompt = function(opts) {
 		return $uibModal.open({
 			animation: false,
-			templateUrl: 'prompt.html',
-			controller: 'PromptCtrl',
+			templateUrl: "prompt.html",
+			controller: "PromptCtrl",
 			resolve: {
 				title: function() {
 					return opts.title;
@@ -458,17 +553,17 @@ app.service('Confirm', function($uibModal) {
 	};
 });
 
-app.controller('PromptCtrl', function ($scope, $uibModalInstance, title, message) {
+app.controller("PromptCtrl", function ($scope, $uibModalInstance, title, message) {
 	$scope.title = title;
 	$scope.message = message;
 });
 
-app.filter('bytes', function() {
+app.filter("bytes", function() {
 	return function(bytes, precision) {
-		if (bytes == 0 || isNaN(parseFloat(bytes)) || !isFinite(bytes)) return '-';
-		if (typeof precision === 'undefined') precision = 1;
-		var units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'],
-			number = Math.floor(Math.log(bytes) / Math.log(1024));
-		return (bytes / Math.pow(1024, Math.floor(number))).toFixed(precision) +  ' ' + units[number];
+		if (bytes == 0 || isNaN(parseFloat(bytes)) || !isFinite(bytes)) return "-";
+		if (!angular.isDefined(precision)) precision = 1;
+		var units = [ "B", "KB", "MB", "GB", "TB", "PB" ];
+		var number = Math.floor(Math.log(bytes) / Math.log(1024));
+		return (bytes / Math.pow(1024, Math.floor(number))).toFixed(precision) + " " + units[number];
 	}
 });
