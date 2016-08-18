@@ -1,4 +1,4 @@
-class NetworkVolume < Volume
+class CloudVolume < Volume
 	TYPE = 'network'.freeze
 
 	@@volumes = Array.new
@@ -31,4 +31,4 @@ class NetworkVolume < Volume
 	end
 end
 
-Dir[File.join(Platform::LIB_PATH, 'network', '*')].each { |file| require file }
+Dir[File.join(Platform::LIB_PATH, 'cloud', '*')].each { |file| require file }

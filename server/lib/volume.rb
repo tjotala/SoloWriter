@@ -53,5 +53,5 @@ class Volume
 end
 
 require File.join(Platform::LIB_PATH, 'local_volume')
-require File.join(Platform::LIB_PATH, 'network_volume')
+require File.join(Platform::LIB_PATH, 'cloud_volume')
 require File.join(Platform::PLATFORM_PATH, 'removable_volume')
