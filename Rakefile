@@ -12,7 +12,13 @@ DIST = 'dist'
 DOCS = 'docs'
 LOGS = 'logs'
 
-SOURCES = FileList[ File.join(WEB_UI, '**', '*'), File.join(BIN, '**', '*'), File.join(CONF, '**', '*.{sh,png}'), File.join(SERVER, '**', '*'), File.join(DOCS, '**', '*'), File.join(LOGS, '**', '*') ]
+SOURCES = FileList[]
+SOURCES.include(File.join(WEB_UI, '**', '*'))
+SOURCES.include(File.join(BIN, '**', '*'))
+SOURCES.include(File.join(CONF, '**', '*.{sh,png}'))
+SOURCES.include(File.join(SERVER, '**', '*'))
+SOURCES.include(File.join(DOCS, '**', '*')).exclude(/autosave$/)
+SOURCES.include(File.join(LOGS, '**', '*'))
 
 PACKAGE = File.join(DIST, 'package.tar')
 
