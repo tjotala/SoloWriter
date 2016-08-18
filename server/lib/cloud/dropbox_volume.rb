@@ -1,4 +1,4 @@
-class DropboxVolume < NetworkVolume
+class DropboxVolume < CloudVolume
 	def initialize
 		super({
 			id: 'dropbox',

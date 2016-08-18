@@ -34,6 +34,6 @@ class Volumes
 	end
 
 	def list
-		[ LocalVolume.new ] + RemovableVolume.list + NetworkVolume.list
+		[ LocalVolume.new ] + RemovableVolume.list + CloudVolume.list
 	end
 end

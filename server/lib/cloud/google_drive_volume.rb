@@ -1,4 +1,4 @@
-class GoogleDriveVolume < NetworkVolume
+class GoogleDriveVolume < CloudVolume
 	def initialize
 		super({
 			id: 'google',

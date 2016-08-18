@@ -1,4 +1,4 @@
-class AmazonCloudDriveVolume < NetworkVolume
+class AmazonCloudDriveVolume < CloudVolume
 	def initialize
 		super({
 			id: 'amazon',
