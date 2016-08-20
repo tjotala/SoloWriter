@@ -1,3 +1,5 @@
+require_relative 'errors'
+
 class Network
 	attr_reader :interface
 	attr_reader :type
@@ -6,8 +8,8 @@ class Network
 	attr_reader :quality
 
 	def initialize(opts = { })
-		@interface = opts[:interface] or raise ArgumentError
-		@type = opts[:type] or raise ArgumentError
+		@interface = opts[:interface] or missing_argument(:interface)
+		@type = opts[:type] or missing_argument(:type)
 		@ssid = opts[:ssid] || nil
 		@encryption = opts[:encryption] || false
 		@quality = opts[:quality] || 0

@@ -1,4 +1,6 @@
 require 'json'
+require_relative 'errors'
+require_relative 'users'
 require_relative 'volumes'
 require_relative 'networks'
 require_relative 'documents'
@@ -8,28 +10,55 @@ class SoloServer < Sinatra::Base
 		set :root, Platform::ROOT_PATH
 		set :public_folder, Platform::PUBLIC_PATH
 		enable :static
+		enable :sessions
 		enable :logging
-		set :static_cache_control, [ :public, :max_age => 10 ]
+		set :static_cache_control, [ :public, :max_age => 60 ]
 		set :port, 8080
-		set :bind, '0.0.0.0' # allow access from other hosts
 		set :volumes, Volumes.new
 		set :networks, Networks.new
+		set :users, Users.new
+	end
+
+	configure :development do
+		set :bind, '0.0.0.0' # allow access from other hosts
+		set :static_cache_control, [ :public, :max_age => 5 ]
 	end
 
 	before do
 		content_type :json
 		# we don't want the client to cache these API responses
 		cache_control :public, :no_store
+
+		if request.content_type =~ /application\/json/ and request.content_length.to_i > 0
+			request.body.rewind
+			@request_json = JSON.parse(request.body.read, :symbolize_names => true)
+		end
 	end
 
 	not_found do
 		json error: "not found: #{request.url}"
 	end
 
-	def resolve(volume_id)
+	def volume_from_id(volume_id)
 		settings.volumes.by_id(volume_id)
-	rescue RuntimeError
-		halt 404
+	rescue RuntimeError => e
+		halt 404, { error: e.message }
+	end
+
+	def set_token(username, password)
+		session[:token] = settings.users.new_token(username, password).encode
+	end
+
+	def clear_token
+		session[:token] = nil
+	end
+
+	def user_from_token
+		session[:token].nil? ? nil : settings.users.from_token(session[:token])
+	end
+
+	def documents(volume_id)
+		Documents.new(volume_from_id(volume_id), user_from_token)
 	end
 
 	get '/' do
@@ -39,13 +68,111 @@ class SoloServer < Sinatra::Base
 	end
 
 	##
+	# List Users
+	#
+	# @method GET
+	# @return 200 list of users
+	#
+	get '/api/users/?' do
+		json settings.users.list
+	end
+
+	##
+	# Add User
+	#
+	# @method PUT
+	# @param username
+	# @body password
+	# @return 200 list of users
+	# @return 403 if user already exists
+	#
+	put '/api/users/:username' do
+		begin
+			settings.users.create(params[:username], @request_json[:password])
+			json settings.users.list
+		rescue AuthenticationError => e
+			halt 401, { error: e.message }.to_json
+		end
+	end
+
+	##
+	# Delete User
+	#
+	# @method DELETE
+	# @param username
+	# @body password
+	# @return 200 list of users
+	# @return 403 if password does not match user
+	#
+	delete '/api/users/:username' do
+		begin
+			settings.users.delete(params[:username], @request_json[:password])
+			json settings.users.list
+		rescue AuthenticationError => e
+			halt 401, { error: e.message }.to_json
+		end
+	end
+
+	##
+	# Change User Name or Password
+	#
+	# @method POST
+	# @param username
+	# @body password
+	# @body new_password
+	# @body new_username
+	# @return 200 list of users
+	# @return 403 if password does not match user
+	#
+	post '/api/users/:username' do
+		begin
+			if @request_json[:new_username]
+				settings.users.update_username(params[:username], @request_json[:password], @request_json[:new_username])
+			elsif @request_json[:old_password]
+				settings.users.update_password(params[:username], @request_json[:password], @request_json[:new_password])
+			end
+			json settings.users.list
+		rescue AuthenticationError => e
+			halt 401, { error: e.message }.to_json
+		end
+	end
+
+	##
+	# Login User
+	#
+	# @method POST
+	# @body username
+	# @body password
+	# @return 200
+	# @return 403 if password does not match user
+	#
+	post '/api/login' do
+		begin
+			set_token(@request_json[:username], @request_json[:password])
+		rescue AuthenticationError => e
+			halt 401, { error: e.message }.to_json
+		end
+	end
+
+	##
+	# Logout User
+	#
+	# @method POST
+	# @return 200
+	#
+	post '/api/logout' do
+		clear_token
+		status 204
+	end
+
+	##
 	# List Storage Volumes
 	#
 	# @method GET
 	# @return 200 list of storage volumes
 	#
 	get '/api/volumes/?' do
-		json settings.volumes.refresh
+		json settings.volumes.list
 	end
 
 	##
@@ -57,7 +184,7 @@ class SoloServer < Sinatra::Base
 	# @return 404 unknown volume
 	#
 	get '/api/volumes/:volume_id/?' do
-		json resolve(params[:volume_id])
+		json volume_from_id(params[:volume_id])
 	end
 
 	##
@@ -71,7 +198,7 @@ class SoloServer < Sinatra::Base
 	post '/api/volumes/:volume_id/mount' do
 		begin
 			logger.info "mount: attempting #{params[:volume_id]}"
-			res = settings.volumes.mount(resolve(params[:volume_id]))
+			res = settings.volumes.mount(volume_from_id(params[:volume_id]))
 			logger.info "mount: got #{res.inspect}"
 			json res
 		rescue RuntimeError => e
@@ -94,7 +221,7 @@ class SoloServer < Sinatra::Base
 	post '/api/volumes/:volume_id/unmount' do
 		begin
 			logger.info "unmount: attempting #{params[:volume_id]}"
-			res = settings.volumes.unmount(resolve(params[:volume_id]))
+			res = settings.volumes.unmount(volume_from_id(params[:volume_id]))
 			logger.info "unmount: got #{res.inspect}"
 			json res
 		rescue RuntimeError => e
@@ -123,7 +250,7 @@ class SoloServer < Sinatra::Base
 	# @return 200 list of documents
 	#
 	get '/api/volumes/:volume_id/files/?' do
-		json Documents.new(resolve(params[:volume_id])).list
+		json documents(params[:volume_id]).list
 	end
 
 	##
@@ -135,7 +262,7 @@ class SoloServer < Sinatra::Base
 	# @return 200 document content
 	#
 	get '/api/volumes/:volume_id/files/:filename' do
-		send_file(Documents.new(resolve(params[:volume_id])).get(params[:filename]).path, :type => :text)
+		send_file(documents(params[:volume_id]).get(params[:filename]).path, :type => :text)
 	end
 
 	##
@@ -148,7 +275,7 @@ class SoloServer < Sinatra::Base
 	# @return 204 ok
 	#
 	put '/api/volumes/:volume_id/files/:filename' do
-		Documents.new(resolve(params[:volume_id])).get(params[:filename]).create(request.body.read)
+		documents(params[:volume_id]).get(params[:filename]).create(request.body.read)
 		status 204
 	end
 
@@ -161,7 +288,7 @@ class SoloServer < Sinatra::Base
 	# @return 204 ok
 	#
 	delete '/api/volumes/:volume_id/files/:filename' do
-		Documents.new(resolve(params[:volume_id])).get(params[:filename]).remove
+		documents(params[:volume_id]).get(params[:filename]).remove
 		status 204
 	end
 

@@ -190,7 +190,7 @@ app.factory("Document", function($http, DEFAULT_DOCUMENT_NAME) {
 		this.setData = function(doc) {
 			angular.extend(this, doc);
 			this.clearDirty();
-			return self;
+			return this;
 		};
 
 		this.getPath = function(volume, newName) {
@@ -283,10 +283,61 @@ app.factory("Documents", function($http, Document) {
 	};
 });
 
-app.controller("SoloWriter", function($scope, $window, $log, $http, $interval, $uibModal, Settings, Volumes, Volume, Document, Confirm, CONTENT_ID, AUTOSAVE_FREQUENCY_NEVER) {
+app.factory("User", function($http) {
+	return function(user) {
+		this.setData = function(user) {
+			angular.extend(this, user);
+			return this;
+		};
+
+		this.getPath = function(username) {
+			return "/api/users/" + encodeURIComponent(angular.isDefined(username) ? username : this.username);
+		};
+
+		this.getName = function() {
+			return this.username;
+		};
+
+		this.reset = function(user) {
+			if (!angular.isDefined(user)) {
+				user = {
+					username: undefined
+				}
+			}
+			this.setData(user);
+		};
+
+		this.load = function(username) {
+			var self = this;
+			return $http.get(this.getPath(username)).then(function success(response) {
+				return self.reset({
+					username: username
+				});
+			});
+		};
+
+		this.remove = function(volume) {
+			return $http.delete(this.getPath());
+		};
+
+		this.login = function() {
+			var self = this;
+			return $http.post("/api/login", { username: self.username, password: self.password });
+		};
+
+		this.logout = function() {
+			return $http.post("/api/logout");
+		};
+
+		this.setData(user);
+	}
+});
+
+app.controller("SoloWriter", function($scope, $window, $log, $http, $interval, $uibModal, Settings, User, Volumes, Volume, Document, Confirm, CONTENT_ID, AUTOSAVE_FREQUENCY_NEVER) {
 	$scope.settings = Settings;
 	$scope.currentVolume = undefined;
 	$scope.currentDocument = new Document();
+	$scope.currentUser = undefined;
 	var autoSaver = undefined;
 
 	Volumes.getLocal().then(function success(local) {
@@ -320,6 +371,34 @@ app.controller("SoloWriter", function($scope, $window, $log, $http, $interval, $
 
 	$scope.hasAlert = function() {
 		return angular.isDefined($scope.alertMessage);
+	};
+
+	$scope.isLoggedIn = function() {
+		return angular.isDefined($scope.currentUser);
+	};
+
+	$scope.login = function() {
+		$uibModal.open({
+			animation: false,
+			templateUrl: "login.html",
+			controller: "LoginCtrl",
+			resolve: {
+				user: function() {
+					return angular.copy($scope.currentUser);
+				}
+			}
+		}).result.then(function success(selected) {
+			$log.info("logging in as " + selected.username);
+			$scope.currentUser = new User(selected);
+			$scope.currentUser.login();
+		}).finally(function () {
+			$scope.setFocus();
+		});
+	};
+
+	$scope.logout = function() {
+		$scope.currentUser.logout();
+		$scope.currentUser = undefined;
 	};
 
 	$scope.resetDoc = function(ask) {
@@ -464,7 +543,7 @@ app.controller("DocumentsCtrl", function ($scope, $uibModal, $uibModalInstance, 
 
 	$scope.selectDoc = function(doc) {
 		$uibModalInstance.close({ doc: doc, volume: $scope.currentVolume });
-	}
+	};
 
 	$scope.deleteDoc = function(doc) {
 		Confirm.confirm({
@@ -474,7 +553,7 @@ app.controller("DocumentsCtrl", function ($scope, $uibModal, $uibModalInstance, 
 			doc.remove($scope.currentVolume);
 			doc.removed = true;
 		});
-	}
+	};
 
 	$scope.refreshDocuments();
 });
@@ -528,8 +607,17 @@ app.controller("AutoSaveCtrl", function ($scope, $uibModalInstance, autoSave, AU
 	$scope.frequency = autoSave.frequency;
 	$scope.tempName = angular.copy(autoSave.tempName);
 
-	$scope.save = function() {
+	$scope.ok = function() {
 		$uibModalInstance.close({ frequency: $scope.frequency, tempName: angular.copy($scope.tempName) });
+	};
+});
+
+app.controller("LoginCtrl", function ($scope, $log, $uibModalInstance, user) {
+	$scope.username = angular.isDefined(user) ? user.username : undefined;
+	$scope.password = "";
+
+	$scope.ok = function() {
+		$uibModalInstance.close({ username: $scope.username, password: $scope.password });
 	};
 });
 
@@ -570,4 +658,18 @@ app.filter("bytes", function() {
 		var number = Math.floor(Math.log(bytes) / Math.log(1024));
 		return (bytes / Math.pow(1024, Math.floor(number))).toFixed(precision) + " " + units[number];
 	}
+});
+
+app.directive('ngEnter', function () {
+	return function (scope, element, attrs) {
+		element.bind("keydown keypress", function (event) {
+			if(event.which === 13) {
+				scope.$apply(function (){
+					scope.$eval(attrs.ngEnter);
+				});
+ 
+				event.preventDefault();
+			}
+		});
+	};
 });

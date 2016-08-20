@@ -14,10 +14,6 @@ class RemovableVolume < Volume
 
 	private
 
-	def refresh
-		update(self.class.get(@id))
-	end
-
 	class << self
 		def run(cmd)
 			raise "#{caller[0]} failed" unless system(cmd)

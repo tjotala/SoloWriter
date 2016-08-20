@@ -1,3 +1,5 @@
+require_relative 'errors'
+
 class CloudVolume < Volume
 	TYPE = 'network'.freeze
 
@@ -11,11 +13,11 @@ class CloudVolume < Volume
 	end
 
 	def mount
-		raise NotImplementedError
+		not_implemented
 	end
 
 	def unmount
-		raise NotImplementedError
+		not_implemented
 	end
 
 	class << self

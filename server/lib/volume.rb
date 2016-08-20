@@ -1,3 +1,5 @@
+require_relative 'errors'
+
 class Volume
 	attr_reader :id # required
 	attr_reader :interface # required
@@ -13,9 +15,9 @@ class Volume
 	end
 
 	def update(opts = { })
-		@id = opts[:id] or raise ArgumentError
-		@interface = opts[:interface] or raise ArgumentError
-		@name = opts[:name] or raise ArgumentError
+		@id = opts[:id] or missing_argument(:id)
+		@interface = opts[:interface] or missing_argument(:interface)
+		@name = opts[:name] or missing_argument(:name)
 		@label = opts[:label] || opts[:name]
 		@fstype = opts[:fstype]
 		@path = opts[:path]

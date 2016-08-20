@@ -44,6 +44,8 @@
 				<button class="btn btn-primary navbar-btn" ng-click="selectStorage()"><i class="fa fa-database"></i>&nbsp;Storage</button>
 				<button class="btn btn-primary navbar-btn" ng-click="selectAutoSave()"><i class="fa fa-hourglass-start"></i>&nbsp;AutoSave</button>
 				<button class="btn btn-primary navbar-btn" ng-click="settings.toggleDevelopment()"><i class="fa" ng-class="settings.isDevelopment() ? 'fa-toggle-on' : 'fa-toggle-off'"></i>&nbsp;<i class="fa fa-gear"></i></button>
+				<button class="btn btn-warning navbar-btn" ng-click="login()" ng-show="!isLoggedIn()"><i class="fa fa-unlock"></i>&nbsp;Login</button>
+				<button class="btn btn-danger navbar-btn" ng-click="logout()" ng-show="isLoggedIn()"><i class="fa fa-lock"></i>&nbsp;Logout</button>
 			</div>
 		</div>
 	</body>

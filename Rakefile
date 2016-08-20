@@ -11,6 +11,7 @@ SERVER = 'server'
 DIST = 'dist'
 DOCS = 'docs'
 LOGS = 'logs'
+USERS = 'users'
 
 SOURCES = FileList[]
 SOURCES.include(File.join(WEB_UI, '**', '*'))
@@ -19,10 +20,11 @@ SOURCES.include(File.join(CONF, '**', '*.{sh,png}'))
 SOURCES.include(File.join(SERVER, '**', '*'))
 SOURCES.include(File.join(DOCS, '**', '*')).exclude(/autosave$/)
 SOURCES.include(File.join(LOGS, '**', '*'))
+SOURCES.include(File.join(USERS, '**', '*'))
 
 PACKAGE = File.join(DIST, 'package.tar')
 
-task :default => [ DIST, DOCS, LOGS, :deploy ]
+task :default => [ DIST, DOCS, LOGS, USERS, :deploy ]
 
 CLEAN.include(DIST)
 CLOBBER.include(LOGS)
@@ -30,6 +32,7 @@ CLOBBER.include(LOGS)
 directory DIST
 directory DOCS
 directory LOGS
+directory USERS
 
 def ssh(cmd)
 	sh "ssh #{TARGET} #{cmd}"
@@ -71,4 +74,8 @@ end
 
 task :shutdown do
 	ssh "sudo shutdown -h now"
+end
+
+task :test do
+	sh "cd #{SERVER} && rspec"
 end
