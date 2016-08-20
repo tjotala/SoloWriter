@@ -12,6 +12,10 @@ class CloudVolume < Volume
 		}))
 	end
 
+	def enabled?
+		false
+	end
+
 	def mount
 		not_implemented
 	end
@@ -23,8 +27,9 @@ class CloudVolume < Volume
 	class << self
 		def list
 			@@volumes.map do |cls|
-				cls.new
-			end
+				volume = cls.new
+				volume.enabled? ? nil : volume
+			end.compact
 		end
 
 		def inherited(cls)
