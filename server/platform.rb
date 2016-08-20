@@ -2,7 +2,8 @@ module Platform
 	ROOT_PATH = File.expand_path(File.dirname(__FILE__)).freeze
 	LIB_PATH = File.expand_path(File.join(ROOT_PATH, 'lib')).freeze
 	PUBLIC_PATH = File.expand_path(File.join(ROOT_PATH, '..', 'web_ui')).freeze
-	DOC_PATH = File.expand_path(File.join(ROOT_PATH, '..', 'docs')).freeze
+	DOCS_PATH = File.expand_path(File.join(ROOT_PATH, '..', 'docs')).freeze
+	USERS_PATH = File.expand_path(File.join(ROOT_PATH, '..', 'users')).freeze
 
 	PLATFORM_TYPE = ((RUBY_PLATFORM == 'arm-linux-gnueabihf') ? :pi : :pc).freeze
 	PLATFORM_PATH = File.join(LIB_PATH, PLATFORM_TYPE.to_s).freeze

@@ -9,7 +9,7 @@ class LocalVolume < Volume
 			interface: promise { RemovableVolume::get_interface(@path) },
 			name: 'SoloWriter',
 			fstype: promise { RemovableVolume::get_file_system(@path) },
-			path: Platform::DOC_PATH,
+			path: Platform::DOCS_PATH,
 			total_space: promise { RemovableVolume::get_total_space(@path) },
 			available_space: promise { RemovableVolume::get_available_space(@path) },
 		})
