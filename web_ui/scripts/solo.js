@@ -13,6 +13,10 @@ app.constant("LOCAL_VOLUME_ID", "local");
 app.constant("DEFAULT_DOCUMENT_NAME", "NoName");
 app.constant("AUTOSAVE_FREQUENCY_NEVER", 0);
 
+app.config(function($logProvider){
+  $logProvider.debugEnabled(false);
+});
+
 app.factory("Settings", function($window, $interpolate, CONTENT_ID, DEFAULT_DOCUMENT_NAME) {
 	var defFontSize = parseFloat($window.getComputedStyle(getById(CONTENT_ID)).getPropertyValue("font-size"));
 	var minFontSize = 10; // px
