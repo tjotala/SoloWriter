@@ -1,4 +1,8 @@
 class Browser
+	def initialize(url)
+		@url = url
+	end
+
 	def launch
 		# no-op
 		self

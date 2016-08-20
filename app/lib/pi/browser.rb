@@ -1,4 +1,8 @@
 class Browser
+	def initialize(url)
+		@url = url
+	end
+
 	def launch
 		@pid = spawn("kweb3 -KJYHPU #{@url}")
 		self

@@ -1,6 +1,7 @@
 require 'promise'
-require_relative 'errors'
-require_relative 'user'
+
+require 'errors'
+require 'user'
 
 class Users
 	def list

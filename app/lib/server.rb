@@ -1,9 +1,10 @@
 require 'json'
-require_relative 'errors'
-require_relative 'users'
-require_relative 'volumes'
-require_relative 'networks'
-require_relative 'documents'
+
+require 'errors'
+require 'users'
+require 'volumes'
+require 'networks'
+require 'documents'
 
 class SoloServer < Sinatra::Base
 	configure do

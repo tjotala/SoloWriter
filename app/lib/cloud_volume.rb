@@ -1,4 +1,4 @@
-require_relative 'errors'
+require 'errors'
 
 class CloudVolume < Volume
 	TYPE = 'network'.freeze
@@ -33,4 +33,4 @@ class CloudVolume < Volume
 	end
 end
 
-Dir[File.join(Platform::LIB_PATH, 'cloud', '*')].each { |file| require file }
+Dir[File.join('cloud', '*')].each { |file| require file }

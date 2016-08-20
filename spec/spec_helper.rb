@@ -1,2 +1,1 @@
-require_relative File.join('..', 'app', 'platform')
-$LOAD_PATH << Platform::LIB_PATH
+require File.join(File.dirname(File.expand_path(__FILE__)), '..', 'app', 'platform')

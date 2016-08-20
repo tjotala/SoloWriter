@@ -1,4 +1,4 @@
-require_relative 'errors'
+require 'errors'
 
 class Volume
 	attr_reader :id # required
@@ -54,6 +54,6 @@ class Volume
 	end
 end
 
-require File.join(Platform::LIB_PATH, 'local_volume')
-require File.join(Platform::LIB_PATH, 'cloud_volume')
-require File.join(Platform::PLATFORM_PATH, 'removable_volume')
+require 'local_volume'
+require 'cloud_volume'
+require 'removable_volume'

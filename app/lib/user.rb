@@ -1,10 +1,11 @@
 require 'openssl'
 require 'base64'
 require 'json'
-require_relative 'errors'
-require_relative 'username'
-require_relative 'password'
-require_relative 'token'
+
+require 'errors'
+require 'username'
+require 'password'
+require 'token'
 
 class User
 	include Comparable

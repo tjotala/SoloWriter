@@ -1,4 +1,11 @@
+require 'errors'
+require 'network'
+
 class Networks
+	def to_json(*args)
+		list.to_json(args)
+	end
+
 	def list
 		arr = Array.new
 		interface = 'wlan0'

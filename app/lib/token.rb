@@ -3,7 +3,8 @@ require 'base64'
 require 'json'
 require 'time'
 require 'zlib'
-require_relative 'errors'
+
+require 'errors'
 
 class Token
 	include Comparable

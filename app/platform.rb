@@ -8,6 +8,8 @@ module Platform
 	PLATFORM_TYPE = ((RUBY_PLATFORM == 'arm-linux-gnueabihf') ? :pi : :pc).freeze
 	PLATFORM_PATH = File.join(LIB_PATH, PLATFORM_TYPE.to_s).freeze
 
+	$LOAD_PATH.unshift(Platform::LIB_PATH, Platform::PLATFORM_PATH)
+
 	def self.pi?
 		PLATFORM_TYPE == :pi
 	end

@@ -1,5 +1,6 @@
 require 'promise'
-require_relative 'volume'
+
+require 'volume'
 
 class Volumes
 	def list

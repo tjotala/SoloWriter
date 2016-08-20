@@ -1,4 +1,4 @@
-require_relative 'document'
+require 'document'
 
 class Documents
 	class GlobalUser

@@ -1,4 +1,4 @@
-require_relative 'errors'
+require 'errors'
 
 class Username
 	include Comparable

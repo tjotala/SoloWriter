@@ -2,7 +2,8 @@ require 'openssl'
 require 'base64'
 require 'json'
 require 'zlib'
-require_relative 'errors'
+
+require 'errors'
 
 class Password
 	include Comparable
