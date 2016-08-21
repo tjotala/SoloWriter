@@ -29,9 +29,9 @@
 					<button class="btn btn-info navbar-btn" ng-click="settings.enterSettings()"><i class="fa fa-gear"></i>&nbsp;Settings</button>
 					<div class="btn-group" role="group" ng-if="settings.isDevelopment()">
 						<button class="btn btn-warning navbar-btn" ng-click="reload()"><i class="fa fa-refresh"></i>&nbsp;Refresh</button>
-						<button class="btn btn-danger navbar-btn" ng-click="quit()"><i class="fa fa-power-off"></i>&nbsp;Quit</button>
+						<button class="btn btn-danger navbar-btn" ng-disabled="currentDocument.isDirty()" ng-click="quit()"><i class="fa fa-power-off"></i>&nbsp;Quit</button>
 					</div>
-					<button class="btn btn-danger navbar-btn" ng-click="shutdown()" ng-if="!settings.isDevelopment()"><i class="fa fa-power-off"></i>&nbsp;Power Off</button>
+					<button class="btn btn-danger navbar-btn" ng-disabled="currentDocument.isDirty()" ng-click="shutdown()" ng-if="!settings.isDevelopment()"><i class="fa fa-power-off"></i>&nbsp;Power Off</button>
 				</div>
 			</div>
 			<div ng-switch-when="true" class="ng-cloak">
