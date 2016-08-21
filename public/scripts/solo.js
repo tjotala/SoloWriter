@@ -178,7 +178,7 @@ app.factory("Volumes", function($http, Volume, LOCAL_VOLUME_ID) {
 		},
 
 		getLocal: function() {
-			return $http.get(this.getPath() + "/" + LOCAL_VOLUME_ID).then(function success(response) {
+			return $http.get(this.getPath() + LOCAL_VOLUME_ID).then(function success(response) {
 				return new Volume(response.data);
 			});
 		}
