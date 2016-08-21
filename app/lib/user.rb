@@ -47,6 +47,10 @@ class User
 		JSON.generate({ username: @username.encode, password: @password.encode })
 	end
 
+	def to_s
+		@username.to_s
+	end
+
 	class << self
 		def create(username, password)
 			self.new(Username.create(username), Password.create(password))
