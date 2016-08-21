@@ -72,7 +72,7 @@ class User
 		end
 
 		def from_token(token)
-			from_name(Token.decode(token)[:username])
+			from_name(Token.decode(token).username)
 		end
 
 		def exist?(username)
