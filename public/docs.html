@@ -12,12 +12,17 @@
 				<th>Actions</th>
 			</tr>
 		</thead>
-		<tbody>
+		<tbody ng-if="documents.length > 0">
 			<tr class="doc-row" ng-repeat="doc in documents | orderBy: 'name'" ng-model="doc" ng-hide="doc.removed">
 				<td ng-click="selectDoc(doc)">{{doc.name}}</td>
 				<td ng-click="selectDoc(doc)">{{doc.modified | date: 'medium' }}</td>
 				<td ng-click="selectDoc(doc)">{{doc.size | bytes}}</td>
 				<td><i class="fa fa-trash" ng-click="deleteDoc(doc)"></i></td>
+			</tr>
+		</tbody>
+		<tbody ng-if="documents.length == 0">
+			<tr>
+				<td colspan="4" class="text-center">No saved documents</td>
 			</tr>
 		</tbody>
 	</table>
