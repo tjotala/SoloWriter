@@ -11,10 +11,6 @@ class Volumes
 		id.to_s == LocalVolume::ID
 	end
 
-	def to_json(*args)
-		list.to_json(args)
-	end
-
 	def by_id(id)
 		vol = list.find { |vol| vol.id == id }
 		vol or raise "unknown volume #{id}"

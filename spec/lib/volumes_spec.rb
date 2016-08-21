@@ -8,6 +8,6 @@ describe Volumes do
 	end
 
 	it "should produce a valid JSON list" do
-		expect( JSON.parse(Volumes.new.to_json) ).to be_a(Array)
+		expect( JSON.parse(Volumes.new.list.to_json) ).to be_a(Array)
 	end
 end

@@ -49,7 +49,7 @@ class User
 
 	class << self
 		def create(username, password)
-			self.new(Username.create(username), Password.create(password))
+			self.new(Username.create(username), Password.create(password)).save
 		end
 
 		def decode(encoded)

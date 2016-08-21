@@ -329,8 +329,38 @@ app.factory("User", function($http) {
 			return $http.post("/api/logout");
 		};
 
+		this.whoami = function() {
+			var self = this;
+			return $http.get("/api/whoami").then(function success(response) {
+				self.reset(response.data);
+			}, function failure() {
+				self.reset(undefined);
+			});
+		};
+
 		this.setData(user);
 	}
+});
+
+app.factory("Users", function($http, User) {
+	return {
+		getPath: function() {
+			return "/api/users/";
+		},
+
+		parseList: function(response) {
+			return response.data.map(function(u, i, a) {
+				return new User(u);
+			});			
+		},
+
+		getList: function() {
+			var self = this;
+			return $http.get(this.getPath()).then(function success(response) {
+				return self.parseList(response);
+			});
+		}
+	};
 });
 
 app.controller("SoloWriter", function($scope, $window, $log, $http, $interval, $uibModal, Settings, User, Volumes, Volume, Document, Confirm, CONTENT_ID, AUTOSAVE_FREQUENCY_NEVER) {
@@ -388,9 +418,14 @@ app.controller("SoloWriter", function($scope, $window, $log, $http, $interval, $
 				}
 			}
 		}).result.then(function success(selected) {
-			$log.info("logging in as " + selected.username);
+			$log.debug("logging in as '" + selected.username + "'");
 			$scope.currentUser = new User(selected);
-			$scope.currentUser.login();
+			$scope.currentUser.login().then(function success() {
+				$log.info("logged in as '" + selected.username + "'");
+			}, function failure() {
+				$scope.currentUser = undefined;
+				$scope.setAlert("failed to login as '" + selected.username + "'");
+			});
 		}).finally(function () {
 			$scope.setFocus();
 		});
@@ -430,6 +465,9 @@ app.controller("SoloWriter", function($scope, $window, $log, $http, $interval, $
 				resolve: {
 					currentVolume: function() {
 						return $scope.currentVolume;
+					},
+					currentUser: function() {
+						return $scope.currentUser;
 					}
 				}
 			}).result.then(function success(selected) {
@@ -510,8 +548,9 @@ app.controller("SoloWriter", function($scope, $window, $log, $http, $interval, $
 	$scope.startAutoSave();
 });
 
-app.controller("DocumentsCtrl", function ($scope, $uibModal, $uibModalInstance, Documents, currentVolume, Confirm) {
+app.controller("DocumentsCtrl", function ($scope, $uibModal, $uibModalInstance, Documents, currentVolume, currentUser, Confirm) {
 	$scope.currentVolume = currentVolume;
+	$scope.currentUser = currentUser;
 	$scope.documents = undefined;
 	$scope.selected = undefined;
 	$scope.loading = false;
@@ -612,13 +651,26 @@ app.controller("AutoSaveCtrl", function ($scope, $uibModalInstance, autoSave, AU
 	};
 });
 
-app.controller("LoginCtrl", function ($scope, $log, $uibModalInstance, user) {
-	$scope.username = angular.isDefined(user) ? user.username : undefined;
+app.controller("LoginCtrl", function ($scope, $log, $uibModalInstance, Users, user) {
+	$scope.users = undefined;
+	$scope.user = undefined;
 	$scope.password = "";
 
-	$scope.ok = function() {
-		$uibModalInstance.close({ username: $scope.username, password: $scope.password });
+	$scope.refreshUsers = function() {
+		$scope.loading = true;
+		Users.getList().then(function success(list) {
+			$scope.users = list;
+			$scope.user = $scope.users[0];
+		}).finally(function() {
+			$scope.loading = false;
+		});
 	};
+
+	$scope.ok = function() {
+		$uibModalInstance.close({ username: $scope.user.username, password: $scope.password });
+	};
+
+	$scope.refreshUsers();
 });
 
 app.service("Confirm", function($uibModal) {

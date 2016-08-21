@@ -8,10 +8,6 @@ class Users
 		Dir[User.path('*')].map { |path| User.from_path(path) }
 	end
 
-	def to_json(*args)
-		list.to_json(args)
-	end
-
 	def validate(username, password)
 		user = User.from_name(username)
 		unauthorized unless user.password?(password)

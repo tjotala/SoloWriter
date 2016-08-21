@@ -23,6 +23,8 @@ class Documents
 	private
 
 	def path
-		File.join(@volume.path, @user.username.to_s)
+		p = File.join(@volume.path, @user.username.to_s)
+		FileUtils.mkdir_p(p)
+		p
 	end
 end

@@ -1,5 +1,5 @@
 <div class="modal-header bg-primary">
-	<h4 class="modal-title pull-left">Saved Documents on <span ng-click="selectStorage()">{{currentVolume.label}}&nbsp;<i class="fa fa-caret-down"></i></span></h4>
+	<h4 class="modal-title pull-left"><span ng-if="currentUser">{{currentUser.getName()}}'s</span><span ng-if="!currentUser">Shared</span> Documents on <span ng-click="selectStorage()">{{currentVolume.label}}&nbsp;<i class="fa fa-caret-down"></i></span></h4>
 	<i class="fa fa-close pull-right" ng-click="$dismiss('cancel')"></i>
 </div>
 <div class="modal-body">
