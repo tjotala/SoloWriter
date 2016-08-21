@@ -4,7 +4,13 @@ class Browser
 	end
 
 	def launch
-		@pid = spawn("kweb3 -KJYHPU #{@url}")
+		# K = kiosk mode
+		# J = enable JavaScript
+		# E = enable cookies
+		# Y = disable video and audio
+		# H = use provided URL as home page
+		# U = ???
+		@pid = spawn("kweb3 -KJEYHU #{@url}")
 		self
 	end
 
