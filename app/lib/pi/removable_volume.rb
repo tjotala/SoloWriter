@@ -2,7 +2,7 @@ class RemovableVolume < Volume
 	def mount
 		self.class.run("sudo mkdir -p /media/usb")
 		self.class.run("sudo chown -R pi:pi /media/usb")
-		self.class.run("sudo mount -o uid=pi -o gid=pi UUID=#{@id} /media/usb")
+		self.class.run("sudo mount -o uid=pi,gid=pi,rw,noatime,nodiratime,noexec,sync,dirsync,flush UUID=#{@id} /media/usb")
 		true
 	end
 
