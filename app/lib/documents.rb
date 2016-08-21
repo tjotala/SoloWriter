@@ -23,6 +23,6 @@ class Documents
 	private
 
 	def path
-		File.join(@volume.path, @user.username)
+		File.join(@volume.path, @user.username.to_s)
 	end
 end

@@ -144,12 +144,13 @@ class SoloServer < Sinatra::Base
 	# @method POST
 	# @body username
 	# @body password
-	# @return 200
+	# @return 204
 	# @return 403 if password does not match user
 	#
 	post '/api/login' do
 		begin
 			set_token(@request_json[:username], @request_json[:password])
+			status 204
 		rescue AuthenticationError => e
 			halt 401, { error: e.message }.to_json
 		end
@@ -159,11 +160,28 @@ class SoloServer < Sinatra::Base
 	# Logout User
 	#
 	# @method POST
-	# @return 200
+	# @return 204
 	#
 	post '/api/logout' do
 		clear_token
 		status 204
+	end
+
+	##
+	# Who Am I
+	#
+	# @method GET
+	# @return 200 with user record
+	# @return 403 if password does not match user
+	#
+	get '/api/whoami' do
+		begin
+			user = user_from_token()
+			raise AuthenticationError, "not logged in" if user.nil?
+			json user
+		rescue AuthenticationError => e
+			halt 401, { error: e.message }.to_json
+		end
 	end
 
 	##
