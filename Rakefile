@@ -13,6 +13,7 @@ PUBLIC = 'public'
 BIN = 'bin'
 CONF = 'conf'
 APP = 'app'
+SPEC = 'spec'
 DIST = 'dist'
 DOCS = 'docs'
 LOGS = 'logs'
@@ -23,6 +24,7 @@ SOURCES.include(File.join(PUBLIC, '**', '*'))
 SOURCES.include(File.join(BIN, '**', '*'))
 SOURCES.include(File.join(CONF, '**', '*.{sh,png}'))
 SOURCES.include(File.join(APP, '**', '*'))
+SOURCES.include(File.join(SPEC, '**', '*'))
 SOURCES.include(File.join(DOCS, '**', '*')).exclude(/autosave$/)
 SOURCES.include(File.join(LOGS, '**', '*'))
 SOURCES.include(File.join(USERS, '**', '*'))
