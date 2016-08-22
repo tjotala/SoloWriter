@@ -40,26 +40,32 @@ class SoloServer < Sinatra::Base
 		json error: "not found: #{request.url}"
 	end
 
-	def volume_from_id(volume_id)
-		settings.volumes.by_id(volume_id)
-	rescue RuntimeError => e
-		halt 404, { error: e.message }
-	end
+	helpers do
+		def volume_from_id(volume_id)
+			settings.volumes.by_id(volume_id)
+		rescue RuntimeError => e
+			halt 404, { error: e.message }
+		end
 
-	def set_token(username, password)
-		session[:token] = settings.users.new_token(username, password).encode
-	end
+		def set_token(username, password)
+			session[:token] = settings.users.new_token(username, password).encode
+		end
 
-	def clear_token
-		session[:token] = nil
-	end
+		def clear_token
+			session[:token] = nil
+		end
 
-	def user_from_token
-		session[:token].nil? ? nil : settings.users.from_token(session[:token])
-	end
+		def user_from_token
+			user = session[:token].nil? ? nil : settings.users.from_token(session[:token])
+			logger.info("user from token: #{user}")
+			user
+		end
 
-	def documents(volume_id)
-		Documents.new(volume_from_id(volume_id), user_from_token)
+		def documents(volume_id)
+			doc = Documents.new(volume_from_id(volume_id), user_from_token)
+			logger.info("document folder: #{doc.path}")
+			doc
+		end
 	end
 
 	get '/' do
@@ -129,8 +135,10 @@ class SoloServer < Sinatra::Base
 		begin
 			if @request_json[:new_username]
 				settings.users.update_username(params[:username], @request_json[:password], @request_json[:new_username])
-			elsif @request_json[:old_password]
+			elsif @request_json[:new_password]
 				settings.users.update_password(params[:username], @request_json[:password], @request_json[:new_password])
+			else
+				halt 400, { error: "no-op request" }.to_json
 			end
 			json settings.users.list
 		rescue AuthenticationError => e

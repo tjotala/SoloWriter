@@ -4,6 +4,10 @@ function getById(id) {
 	return document.getElementById(id);
 }
 
+function setFocus(id) {
+	getById(id).focus();
+}
+
 function now8601() {
 	return (new Date()).toISOString();
 }
@@ -316,10 +320,6 @@ app.factory("User", function($http) {
 			});
 		};
 
-		this.remove = function(volume) {
-			return $http.delete(this.getPath());
-		};
-
 		this.login = function() {
 			var self = this;
 			return $http.post("/api/login", { username: self.username, password: self.password });
@@ -336,6 +336,14 @@ app.factory("User", function($http) {
 			}, function failure() {
 				self.reset(undefined);
 			});
+		};
+
+		this.changeUsername = function(old_password, new_username) {
+			return $http.post(this.getPath(), { password: old_password, new_username: new_username });
+		};
+
+		this.changePassword = function(old_password, new_password) {
+			return $http.post(this.getPath(), { password: old_password, new_password: new_password });
 		};
 
 		this.setData(user);
@@ -359,6 +367,20 @@ app.factory("Users", function($http, User) {
 			return $http.get(this.getPath()).then(function success(response) {
 				return self.parseList(response);
 			});
+		},
+
+		create: function(username, password) {
+			var self = this;
+			return $http.put(this.getPath() + encodeURIComponent(username), { password: password }).then(function success(response) {
+				return self.parseList(response);
+			});
+		},
+
+		remove: function(username, password) {
+			var self = this;
+			return $http.delete(this.getPath() + encodeURIComponent(username), { data: { password: password }, headers: { "Content-Type": "application/json" } }).then(function success(response) {
+				return self.parseList(response);
+			});
 		}
 	};
 });
@@ -375,7 +397,7 @@ app.controller("SoloWriter", function($scope, $window, $log, $http, $interval, $
 	});
 
 	$scope.setFocus = function() {
-		getById(CONTENT_ID).focus();
+		setFocus(CONTENT_ID);
 	};
 
 	$scope.reload = function() {
@@ -434,6 +456,16 @@ app.controller("SoloWriter", function($scope, $window, $log, $http, $interval, $
 	$scope.logout = function() {
 		$scope.currentUser.logout();
 		$scope.currentUser = undefined;
+	};
+
+	$scope.modifyUsers = function() {
+		$uibModal.open({
+			animation: false,
+			templateUrl: "users.html",
+			controller: "UsersCtrl"
+		}).result.finally(function () {
+			$scope.setFocus();
+		});
 	};
 
 	$scope.resetDoc = function(ask) {
@@ -671,6 +703,111 @@ app.controller("LoginCtrl", function ($scope, $log, $uibModalInstance, Users, us
 	};
 
 	$scope.refreshUsers();
+});
+
+app.controller("UsersCtrl", function ($scope, $log, $uibModalInstance, Users, User, Password) {
+	$scope.users = undefined;
+	$scope.username = undefined;
+	$scope.alertMessage = undefined;
+
+	$scope.refreshUsers = function() {
+		$scope.loading = true;
+		Users.getList().then(function success(list) {
+			$scope.users = list;
+		}).finally(function() {
+			$scope.loading = false;
+		});
+	};
+
+	$scope.addUser = function() {
+		Password.challenge().then(function success(password) {
+			$scope.loading = true;
+			Users.create($scope.username, password.password).then(function success(list) {
+				$scope.users = list;
+				$scope.username = undefined;
+			}).finally(function() {
+				$scope.loading = false;
+			});
+		});
+	};
+
+	$scope.deleteUser = function(user) {
+		Password.challenge().then(function success(password) {
+			$scope.loading = true;
+			Users.remove(user.username, password.password).then(function success(list) {
+				$scope.users = list;
+			}).finally(function() {
+				$scope.loading = false;
+			});
+		});
+	};
+
+	$scope.changeUsername = function(user) {
+		Password.challenge({
+			title: "Enter New Username",
+			label: "New Username",
+			field: "new_username",
+			value: user.username
+		}).then(function success(response) {
+			$scope.loading = true;
+			user.changeUsername(response.password, response.new_username).then(function success() {
+				$scope.refreshUsers();
+			}, function failure() {
+				$scope.alertMessage = "Failed!";
+			}).finally(function() {
+				$scope.loading = false;
+			});
+		});
+	};
+
+	$scope.changePassword = function(user) {
+		Password.challenge({
+			title: "Enter New Password",
+			label: "New Password",
+			field: "new_password",
+			value: undefined
+		}).then(function success(response) {
+			$scope.loading = true;
+			user.changePassword(response.password, response.new_password).then(function success() {
+				$scope.refreshUsers();
+			}, function failure() {
+				$scope.alertMessage = "Failed!";
+			}).finally(function() {
+				$scope.loading = false;
+			});
+		});
+	};
+
+	$scope.refreshUsers();
+});
+
+app.service("Password", function($uibModal) {
+	this.challenge = function(extra) {
+		return $uibModal.open({
+			animation: false,
+			templateUrl: "password.html",
+			controller: "PasswordCtrl",
+			resolve: {
+				extra: function() {
+					return extra;
+				}
+			}
+		}).result;
+	};
+});
+
+app.controller("PasswordCtrl", function ($scope, $uibModalInstance, extra) {
+	$scope.extra = angular.copy(extra);
+	$scope.password = undefined;
+	$scope.title = angular.isDefined(extra.title) ? extra.title : "Enter Password";
+
+	$scope.ok = function() {
+		var result = { password: $scope.password };
+		if (angular.isDefined($scope.extra)) {
+			result[$scope.extra.field] = $scope.extra.value;
+		}
+		$uibModalInstance.close(result);
+	};
 });
 
 app.service("Confirm", function($uibModal) {

@@ -1,7 +1,14 @@
+class InternalError < RuntimeError
+end
+
 class AuthenticationError < RuntimeError
 end
 
 class TokenError < RuntimeError
+end
+
+def internal_error(reason)
+	raise InternalError, reason
 end
 
 def unauthorized

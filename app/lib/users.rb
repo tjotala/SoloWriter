@@ -15,7 +15,10 @@ class Users
 	end
 
 	def new_token(username, password)
-		validate(username, password).new_token
+		user = validate(username, password)
+		token = user.new_token
+		user.save
+		token
 	end
 
 	def from_token(token)
@@ -28,15 +31,19 @@ class Users
 	end
 
 	def update_username(username, password, new_username)
-		validate(username, password).delete
+		user = validate(username, password)
+		user.delete
 		create(new_username, password)
 	end
 
 	def update_password(username, password, new_password)
-		validate(username, password).new_password(new_password).save
+		user = validate(username, password)
+		forbidden if user.password?(new_password) # new_password == old_password
+		user.new_password(new_password).save
 	end
 
 	def delete(username, password)
-		validate(username, password).delete
+		user = validate(username, password)
+		user.delete
 	end
 end
