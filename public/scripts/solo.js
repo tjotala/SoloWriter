@@ -783,6 +783,9 @@ app.controller("UsersCtrl", function ($scope, $log, $uibModalInstance, Users, Us
 
 app.service("Password", function($uibModal) {
 	this.challenge = function(extra) {
+		if (!angular.isDefined(extra)) {
+			extra = { };
+		}
 		return $uibModal.open({
 			animation: false,
 			templateUrl: "password.html",
