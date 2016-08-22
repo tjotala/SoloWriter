@@ -6,5 +6,8 @@ gem 'sinatra'
 gem 'sinatra-json'
 
 # development gems
-gem 'rake', :groups => [ :development, :test ]
-gem 'rspec', :require => 'spec', :groups => [ :development, :test ]
+group :test
+	gem 'rake'
+	gem 'rspec', require: 'spec'
+ 	gem 'fakefs', require: "fakefs/safe"
+end
