@@ -385,7 +385,7 @@ app.factory("Users", function($http, User) {
 	};
 });
 
-app.controller("SoloWriter", function($scope, $window, $log, $http, $interval, $uibModal, Settings, User, Volumes, Volume, Document, Confirm, CONTENT_ID, AUTOSAVE_FREQUENCY_NEVER) {
+app.controller("SoloWriter", function($scope, $window, $log, $http, $interval, $uibModal, Settings, User, Volumes, Volume, Document, MessageBox, CONTENT_ID, AUTOSAVE_FREQUENCY_NEVER) {
 	$scope.settings = Settings;
 	$scope.currentVolume = undefined;
 	$scope.currentDocument = new Document();
@@ -412,19 +412,6 @@ app.controller("SoloWriter", function($scope, $window, $log, $http, $interval, $
 		$http.post("/api/shutdown");
 	};
 
-	$scope.setAlert = function(msg) {
-		$scope.alertMessage = msg;
-	};
-
-	$scope.clearAlert = function() {
-		$scope.alertMessage = undefined;
-		$scope.setFocus();
-	};
-
-	$scope.hasAlert = function() {
-		return angular.isDefined($scope.alertMessage);
-	};
-
 	$scope.isLoggedIn = function() {
 		return angular.isDefined($scope.currentUser);
 	};
@@ -446,7 +433,9 @@ app.controller("SoloWriter", function($scope, $window, $log, $http, $interval, $
 				$log.info("logged in as '" + selected.username + "'");
 			}, function failure() {
 				$scope.currentUser = undefined;
-				$scope.setAlert("failed to login as '" + selected.username + "'");
+				Confirm.error({
+					message: "Failed to login as '" + selected.username + "'"
+				});
 			});
 		}).finally(function () {
 			$scope.setFocus();
@@ -470,7 +459,7 @@ app.controller("SoloWriter", function($scope, $window, $log, $http, $interval, $
 
 	$scope.resetDoc = function(ask) {
 		if (ask && $scope.currentDocument.isDirty()) {
-			Confirm.confirm({
+			MessageBox.confirm({
 				name: $scope.currentDocument.name
 			}).then(function ok() {
 				$scope.resetDoc(false); // call myself without prompting
@@ -484,7 +473,7 @@ app.controller("SoloWriter", function($scope, $window, $log, $http, $interval, $
 
 	$scope.openDoc = function(ask) {
 		if (ask && $scope.currentDocument.isDirty()) {
-			Confirm.confirm({
+			MessageBox.confirm({
 				name: $scope.currentDocument.name
 			}).then(function ok() {
 				$scope.openDoc(false); // call myself without prompting
@@ -576,11 +565,10 @@ app.controller("SoloWriter", function($scope, $window, $log, $http, $interval, $
 		}
 	}
 
-	$scope.clearAlert();
 	$scope.startAutoSave();
 });
 
-app.controller("DocumentsCtrl", function ($scope, $uibModal, $uibModalInstance, Documents, currentVolume, currentUser, Confirm) {
+app.controller("DocumentsCtrl", function ($scope, $uibModal, $uibModalInstance, Documents, currentVolume, currentUser, MessageBox) {
 	$scope.currentVolume = currentVolume;
 	$scope.currentUser = currentUser;
 	$scope.documents = undefined;
@@ -617,7 +605,7 @@ app.controller("DocumentsCtrl", function ($scope, $uibModal, $uibModalInstance, 
 	};
 
 	$scope.deleteDoc = function(doc) {
-		Confirm.confirm({
+		MessageBox.confirm({
 			name: doc.name,
 			message: "Deleting document '" + doc.name + "'. Are you sure?"
 		}).then(function ok() {
@@ -705,10 +693,9 @@ app.controller("LoginCtrl", function ($scope, $log, $uibModalInstance, Users, us
 	$scope.refreshUsers();
 });
 
-app.controller("UsersCtrl", function ($scope, $log, $uibModalInstance, Users, User, Password) {
+app.controller("UsersCtrl", function ($scope, $log, $uibModalInstance, Users, User, Password, MessageBox) {
 	$scope.users = undefined;
 	$scope.username = undefined;
-	$scope.alertMessage = undefined;
 
 	$scope.refreshUsers = function() {
 		$scope.loading = true;
@@ -736,6 +723,10 @@ app.controller("UsersCtrl", function ($scope, $log, $uibModalInstance, Users, Us
 			$scope.loading = true;
 			Users.remove(user.username, password.password).then(function success(list) {
 				$scope.users = list;
+			}, function failure() {
+				MessageBox.error({
+					message: "Failed to delete " + user.username
+				});
 			}).finally(function() {
 				$scope.loading = false;
 			});
@@ -753,7 +744,9 @@ app.controller("UsersCtrl", function ($scope, $log, $uibModalInstance, Users, Us
 			user.changeUsername(response.password, response.new_username).then(function success() {
 				$scope.refreshUsers();
 			}, function failure() {
-				$scope.alertMessage = "Failed!";
+				MessageBox.error({
+					message: "Failed to change username of " + user.username
+				});
 			}).finally(function() {
 				$scope.loading = false;
 			});
@@ -771,7 +764,9 @@ app.controller("UsersCtrl", function ($scope, $log, $uibModalInstance, Users, Us
 			user.changePassword(response.password, response.new_password).then(function success() {
 				$scope.refreshUsers();
 			}, function failure() {
-				$scope.alertMessage = "Failed!";
+				MessageBox.error({
+					message: "Failed to change password of " + user.username
+				});
 			}).finally(function() {
 				$scope.loading = false;
 			});
@@ -813,33 +808,35 @@ app.controller("PasswordCtrl", function ($scope, $uibModalInstance, extra) {
 	};
 });
 
-app.service("Confirm", function($uibModal) {
-	this.confirm = function(opts) {
-		opts.title || (opts.title = "Confirm");
-		opts.message || (opts.message = "Unsaved modifications in document '" + opts.name + "' will be lost. Are you sure?");
-		return this.prompt(opts);
+app.service("MessageBox", function($uibModal) {
+	this.confirm = function(options) {
+		options.title || (options.title = "Confirm");
+		options.message || (options.message = "Unsaved modifications in document '" + options.name + "' will be lost. Are you sure?");
+		return this.prompt(options);
 	};
 
-	this.prompt = function(opts) {
+	this.error = function(options) {
+		options.title || (options.title = "Error");
+		options.ok_only = true;
+		return this.prompt(options);
+	};
+
+	this.prompt = function(options) {
 		return $uibModal.open({
 			animation: false,
-			templateUrl: "prompt.html",
-			controller: "PromptCtrl",
+			templateUrl: "messagebox.html",
+			controller: "MessageBoxCtrl",
 			resolve: {
-				title: function() {
-					return opts.title;
-				},
-				message: function() {
-					return opts.message;
+				options: function() {
+					return options;
 				}
 			}
 		}).result;
 	};
 });
 
-app.controller("PromptCtrl", function ($scope, $uibModalInstance, title, message) {
-	$scope.title = title;
-	$scope.message = message;
+app.controller("MessageBoxCtrl", function ($scope, $uibModalInstance, options) {
+	$scope.options = angular.copy(options);
 });
 
 app.filter("bytes", function() {

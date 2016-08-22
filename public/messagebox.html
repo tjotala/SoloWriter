@@ -1,10 +1,10 @@
 <div class="modal-header bg-danger">
-	<h4 class="modal-title">{{title}}</h4>
+	<h4 class="modal-title">{{options.title}}</h4>
 </div>
 <div class="modal-body">
-	<p>{{message}}</p>
+	<p>{{options.message}}</p>
 </div>
 <div class="modal-footer">
 	<button class="btn btn-primary" type="button" ng-click="$close('ok')">OK</button>
-	<button class="btn btn-warning" type="button" ng-hide="ok_only" ng-click="$dismiss('cancel')">Cancel</button>
+	<button class="btn btn-warning" type="button" ng-if="!options.ok_only" ng-click="$dismiss('cancel')">Cancel</button>
 </div>

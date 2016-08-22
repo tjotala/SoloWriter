@@ -11,7 +11,6 @@
 		<script type="text/javascript" src="scripts/solo.js"></script>
 	</head>
 	<body ng-controller="SoloWriter">
-		<div id="alert" uib-alert class="alert alert-danger" ng-if="hasAlert()" dismiss-on-timeout="5000" close="clearAlert()">{{alertMessage}}</div>
 		<div id="body">
 			<div id="editor">
 				<textarea id="content" ng-attr-placeholder="Enter text..." ng-model="currentDocument.content" ng-change="currentDocument.setDirty()" ng-style="{ 'font-size': settings.getTextSize() }" ng-class="settings.hasBackgroundImage() ? 'logo' : ''"></textarea>
@@ -35,7 +34,7 @@
 				</div>
 			</div>
 			<div ng-switch-when="true" class="ng-cloak">
-				<button class="btn btn-danger navbar-btn" ng-click="settings.exitSettings()"><i class="fa fa-lg fa-chevron-left"></i>&nbsp;Back</button>
+				<button class="btn btn-success navbar-btn" ng-click="settings.exitSettings()"><i class="fa fa-lg fa-chevron-left"></i>&nbsp;Back</button>
 				<div class="btn-group" role="group" title="Adjust Text Size">
 					<button class="btn btn-primary navbar-btn" ng-click="settings.setTextSize(2)"><i class="fa fa-lg fa-caret-up"></i></button>
 					<button class="btn btn-primary navbar-btn" ng-click="settings.setTextSize()"><i class="fa fa-font"></i></button>
@@ -45,9 +44,9 @@
 				<button class="btn btn-primary navbar-btn" ng-click="selectStorage()"><i class="fa fa-lg fa-database"></i>&nbsp;Storage</button>
 				<button class="btn btn-primary navbar-btn" ng-click="selectAutoSave()"><i class="fa fa-lg fa-hourglass-start"></i>&nbsp;AutoSave</button>
 				<button class="btn btn-primary navbar-btn" title="Toggle Development Mode" ng-click="settings.toggleDevelopment()"><i class="fa fa-lg" ng-class="settings.isDevelopment() ? 'fa-toggle-on' : 'fa-toggle-off'"></i>&nbsp;<i class="fa fa-lg fa-gear"></i></button>
-				<button class="btn btn-warning navbar-btn" ng-click="login()" ng-show="!isLoggedIn()"><i class="fa fa-lg fa-unlock"></i>&nbsp;Login</button>
+				<button class="btn btn-danger navbar-btn" ng-click="login()" ng-show="!isLoggedIn()"><i class="fa fa-lg fa-unlock"></i>&nbsp;Login</button>
 				<button class="btn btn-danger navbar-btn" ng-click="logout()" ng-show="isLoggedIn()"><i class="fa fa-lg fa-lock"></i>&nbsp;Logout</button>
-				<button class="btn btn-danger navbar-btn" ng-click="modifyUsers()"><i class="fa fa-lg fa-users"></i>&nbsp;Users</button>
+				<button class="btn btn-info navbar-btn" ng-click="modifyUsers()"><i class="fa fa-lg fa-users"></i>&nbsp;Users</button>
 			</div>
 		</div>
 	</body>
