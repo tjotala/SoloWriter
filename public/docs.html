@@ -1,6 +1,6 @@
 <div class="modal-header bg-primary">
-	<h4 class="modal-title pull-left"><span ng-if="currentUser">{{currentUser.getName()}}'s</span><span ng-if="!currentUser">Shared</span> Documents on <span ng-click="selectStorage()">{{currentVolume.label}}&nbsp;<i class="fa fa-caret-down"></i></span></h4>
-	<i class="fa fa-close pull-right" ng-click="$dismiss('cancel')"></i>
+	<h4 class="modal-title pull-left"><span ng-if="currentUser">{{currentUser.getName()}}'s</span><span ng-if="!currentUser">Shared</span> Documents on <strong ng-click="selectStorage()">{{currentVolume.label}}&nbsp;<i class="fa fa-lg fa-caret-down"></i></strong></h4>
+	<i class="fa fa-lg fa-close pull-right" ng-click="$dismiss('cancel')"></i>
 </div>
 <div class="modal-body">
 	<table class="table table-condensed table-hover">
@@ -17,7 +17,7 @@
 				<td ng-click="selectDoc(doc)">{{doc.name}}</td>
 				<td ng-click="selectDoc(doc)">{{doc.modified | date: 'medium' }}</td>
 				<td ng-click="selectDoc(doc)">{{doc.size | bytes}}</td>
-				<td><i class="fa fa-trash" ng-click="deleteDoc(doc)"></i></td>
+				<td><i class="fa fa-lg fa-trash" ng-click="deleteDoc(doc)" title="Delete"></i></td>
 			</tr>
 		</tbody>
 		<tbody ng-if="documents.length == 0">

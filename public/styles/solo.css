@@ -78,3 +78,12 @@ html {
 .logo {
     /*background: url('/images/purple_transparent_logo.jpg') no-repeat center center;*/
 }
+
+.modal-body {
+	max-height: 360px !important;
+	overflow-y: auto !important;
+}
+
+td.vertical-center {
+	vertical-align: middle !important;
+}

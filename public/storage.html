@@ -1,9 +1,9 @@
 <div class="modal-header bg-success">
-	<h4 class="modal-title pull-left">Storage Settings <i class="fa fa-spinner fa-spin fa-fw fa-lg" ng-show="loading == true"></i></h4>
-	<i class="fa fa-close pull-right" ng-click="$dismiss('cancel')"></i>
+	<h4 class="modal-title pull-left">Storage Settings <i class="fa fa-lg fa-fw fa-spinner fa-spin" ng-show="loading == true"></i></h4>
+	<i class="fa fa-lg fa-close pull-right" ng-click="$dismiss('cancel')"></i>
 </div>
 <div class="modal-body">
-	<table class="table table-condensed table-hover">
+	<table class="table table-condensed">
 		<thead>
 			<tr>
 				<th></th>
@@ -17,12 +17,12 @@
 		<tbody>
 			<tr ng-repeat="volume in volumes">
 				<td>
-					<i ng-show="loading == volume.id" class="fa fa-spinner fa-spin fa-fw fa-lg"></i>
-					<i ng-show="loading != volume.id && volume.mounted" class="fa fa-fw fa-lg" ng-class="isVolumeSelected(volume) ? 'fa-check-square-o' : 'fa-square-o'" ng-click="selectVolume(volume)"></i>
-					<i ng-show="loading != volume.id && volume.mounted && volume.can_unmount" class="fa fa-fw fa-lg fa-unlink" ng-click="unmountVolume(volume)"></i>
-					<i ng-show="loading != volume.id && !volume.mounted && volume.can_mount" class="fa fa-fw fa-lg fa-link" ng-click="mountVolume(volume)"></i>
+					<i ng-show="loading == volume.id" class="fa fa-lg fa-fw fa-spinner fa-spin"></i>
+					<i ng-show="loading != volume.id && volume.mounted" class="fa fa-lg fa-fw" title="Select" ng-class="isVolumeSelected(volume) ? 'fa-check-square-o' : 'fa-square-o'" ng-click="selectVolume(volume)"></i>
+					<i ng-show="loading != volume.id && volume.mounted && volume.can_unmount" class="fa fa-lg fa-fw fa-unlink" title="Disconnect" ng-click="unmountVolume(volume)"></i>
+					<i ng-show="loading != volume.id && !volume.mounted && volume.can_mount" class="fa fa-lg fa-fw fa-link" title="Connect" ng-click="mountVolume(volume)"></i>
 				</td>
-				<td><i class="fa fa-fw fa-lg" ng-class="volume.getIcon()"></i></td>
+				<td><i class="fa fa-lg fa-fw" ng-class="volume.getIcon()"></i></td>
 				<td>{{volume.label}}</td>
 				<td>{{volume.total_space | bytes}}</td>
 				<td>{{volume.available_space | bytes}}</td>
