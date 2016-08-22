@@ -18,6 +18,8 @@ class SoloServer < Sinatra::Base
 		set :volumes, Volumes.new
 		set :networks, Networks.new
 		set :users, Users.new
+		set :show_exceptions, false
+		set :raise_errors, false
 	end
 
 	configure :development do
@@ -40,11 +42,37 @@ class SoloServer < Sinatra::Base
 		json error: "not found: #{request.url}"
 	end
 
+	error ArgumentError do
+		bad_request(env['sinatra.error'].message)
+	end
+
+	error AuthenticationError do
+		halt 401, { error: e.message }.to_json
+	end
+
+	error AuthorizationError do
+		halt 403, { error: e.message }.to_json
+	end
+
+	error NoSuchResourceError do
+ 		halt 404, { error: e.message }.to_json
+	end
+
+	error ConflictedResourceError do
+ 		halt 409, { error: e.message }.to_json
+	end
+
+	error InternalError do
+		halt 500, { error: e.message }.to_json
+	end
+
+	error NotImplementedError do
+		halt 501, { error: e.message }.to_json
+	end
+
 	helpers do
 		def volume_from_id(volume_id)
 			settings.volumes.by_id(volume_id)
-		rescue RuntimeError => e
-			halt 404, { error: e.message }
 		end
 
 		def set_token(username, password)
@@ -65,6 +93,10 @@ class SoloServer < Sinatra::Base
 			doc = Documents.new(volume_from_id(volume_id), user_from_token)
 			logger.info("document folder: #{doc.path}")
 			doc
+		end
+
+		def bad_request(msg)
+			halt 400, { error: msg }.to_json
 		end
 	end
 
@@ -94,12 +126,8 @@ class SoloServer < Sinatra::Base
 	# @return 403 if user already exists
 	#
 	put '/api/users/:username' do
-		begin
-			settings.users.create(params[:username], @request_json[:password])
-			json settings.users.list
-		rescue AuthenticationError => e
-			halt 401, { error: e.message }.to_json
-		end
+		settings.users.create(params[:username], @request_json[:password])
+		json settings.users.list
 	end
 
 	##
@@ -112,12 +140,8 @@ class SoloServer < Sinatra::Base
 	# @return 403 if password does not match user
 	#
 	delete '/api/users/:username' do
-		begin
-			settings.users.delete(params[:username], @request_json[:password])
-			json settings.users.list
-		rescue AuthenticationError => e
-			halt 401, { error: e.message }.to_json
-		end
+		settings.users.delete(params[:username], @request_json[:password])
+		json settings.users.list
 	end
 
 	##
@@ -132,18 +156,14 @@ class SoloServer < Sinatra::Base
 	# @return 403 if password does not match user
 	#
 	post '/api/users/:username' do
-		begin
-			if @request_json[:new_username]
-				settings.users.update_username(params[:username], @request_json[:password], @request_json[:new_username])
-			elsif @request_json[:new_password]
-				settings.users.update_password(params[:username], @request_json[:password], @request_json[:new_password])
-			else
-				halt 400, { error: "no-op request" }.to_json
-			end
-			json settings.users.list
-		rescue AuthenticationError => e
-			halt 401, { error: e.message }.to_json
+		if @request_json[:new_username]
+			settings.users.update_username(params[:username], @request_json[:password], @request_json[:new_username])
+		elsif @request_json[:new_password]
+			settings.users.update_password(params[:username], @request_json[:password], @request_json[:new_password])
+		else
+			bad_request("nothing to change")
 		end
+		json settings.users.list
 	end
 
 	##
@@ -156,12 +176,8 @@ class SoloServer < Sinatra::Base
 	# @return 403 if password does not match user
 	#
 	post '/api/login' do
-		begin
-			set_token(@request_json[:username], @request_json[:password])
-			status 204
-		rescue AuthenticationError => e
-			halt 401, { error: e.message }.to_json
-		end
+		set_token(@request_json[:username], @request_json[:password])
+		status 204
 	end
 
 	##
@@ -183,13 +199,9 @@ class SoloServer < Sinatra::Base
 	# @return 403 if password does not match user
 	#
 	get '/api/whoami' do
-		begin
-			user = user_from_token()
-			raise AuthenticationError, "not logged in" if user.nil?
-			json user
-		rescue AuthenticationError => e
-			halt 401, { error: e.message }.to_json
-		end
+		user = user_from_token()
+		unauthorized if user.nil?
+		json user
 	end
 
 	##
@@ -223,17 +235,7 @@ class SoloServer < Sinatra::Base
 	# @return 409 failed
 	#
 	post '/api/volumes/:volume_id/mount' do
-		begin
-			logger.info "mount: attempting #{params[:volume_id]}"
-			res = settings.volumes.mount(volume_from_id(params[:volume_id]))
-			logger.info "mount: got #{res.inspect}"
-			json res
-		rescue RuntimeError => e
-			logger.error e.backtrace.join("\n")
-	 		halt 409, { error: e.message }.to_json
-		rescue NotImplementedError => e
-			halt 400, { error: e.message }.to_json
-	 	end
+		json settings.volumes.mount(volume_from_id(params[:volume_id]))
 	end
 
 	##
@@ -246,27 +248,27 @@ class SoloServer < Sinatra::Base
 	# @return 409 failed
 	#
 	post '/api/volumes/:volume_id/unmount' do
-		begin
-			logger.info "unmount: attempting #{params[:volume_id]}"
-			res = settings.volumes.unmount(volume_from_id(params[:volume_id]))
-			logger.info "unmount: got #{res.inspect}"
-			json res
-		rescue RuntimeError => e
-			logger.error e.backtrace.join("\n")
-			halt 409, { error: e.message }.to_json
-		rescue NotImplementedError => e
-			halt 409, { error: e.message }.to_json
-		end
+		json settings.volumes.unmount(volume_from_id(params[:volume_id]))
 	end
 
 	##
-	# List WiFi Networks
+	# List Active Networks
 	#
 	# @method GET
-	# @return 200 list of networks
+	# @return 200 list of active networks
 	#
-	get '/api/networks/?' do
-		json settings.networks
+	get '/api/networks/active/?' do
+		json settings.networks.active
+	end
+
+	##
+	# List Wireless Networks
+	#
+	# @method GET
+	# @return 200 list of wireless networks
+	#
+	get '/api/networks/wireless/?' do
+		json settings.networks.wireless
 	end
 
 	##

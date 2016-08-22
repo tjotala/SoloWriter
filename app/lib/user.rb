@@ -18,9 +18,15 @@ class User
 		@password.match?(password)
 	end
 
-	def new_password(password)
+	def new_username(username)
+		@username = Username.create(username)
 		touch
+		self
+	end
+
+	def new_password(password)
 		@password = Password.create(password)
+		touch
 		self
 	end
 
@@ -30,14 +36,14 @@ class User
 	end
 
 	def save
-		File.open(self.class.path(@username), 'w') { |f| f.write(encode) }
+		File.open(path, 'w') { |f| f.write(encode) }
 		self
 	rescue Errno::EACCES => e
 		internal_error("failed to save user #{@username}: #{e.message}")
 	end
 
 	def delete
-		File.delete(self.class.path(@username))
+		File.delete(path)
 	rescue Errno::ENOENT => e
 		invalid_argument(:username, "no such user #{@username}: #{e.message}")
 	rescue Errno::EACCES => e
@@ -73,6 +79,10 @@ class User
 		@username.to_s
 	end
 
+	def path
+		self.class.path(@username)
+	end
+
 	class << self
 		def create(username, password)
 			self.new(Username.create(username), Password.create(password), now, nil)
@@ -96,7 +106,7 @@ class User
 			json = File.open(path, 'r') { |f| f.read }
 			from_json(json)
 		rescue Errno::ENOENT
-			unauthorized
+			no_such_resource("user")
 		end
 
 		def from_name(username)

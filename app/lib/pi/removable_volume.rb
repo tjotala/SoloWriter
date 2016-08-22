@@ -1,3 +1,5 @@
+require 'errors'
+
 class RemovableVolume < Volume
 	def mount
 		self.class.run("sudo mkdir -p /media/usb")
@@ -16,7 +18,7 @@ class RemovableVolume < Volume
 
 	class << self
 		def run(cmd)
-			raise "#{caller[0]} failed" unless system(cmd)
+			conflicted_resource(caller[0]) unless system(cmd)
 		end
 
 		def parse(vol)

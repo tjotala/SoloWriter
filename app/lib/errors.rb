@@ -4,11 +4,24 @@ end
 class AuthenticationError < RuntimeError
 end
 
+class AuthorizationError < RuntimeError
+end
+
 class TokenError < RuntimeError
+end
+
+class NoSuchResourceError < RuntimeError
+end
+
+class ConflictedResourceError < RuntimeError
 end
 
 def internal_error(reason)
 	raise InternalError, reason
+end
+
+def no_such_resource(reason)
+	raise NoSuchResourceError, reason
 end
 
 def unauthorized
@@ -16,7 +29,11 @@ def unauthorized
 end
 
 def forbidden
-	raise AuthenticationError, "forbidden operation"
+	raise AuthorizationError, "forbidden operation"
+end
+
+def conflicted_resource(reason)
+	raise ConflictedResourceError, "operation on resource failed: #{reason}"
 end
 
 def invalid_token
