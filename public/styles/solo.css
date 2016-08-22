@@ -76,7 +76,7 @@ html {
 }
 
 .logo {
-    /*background: url('/images/purple_transparent_logo.jpg') no-repeat center center;*/
+    background: url('/images/purple_transparent_logo.jpg') no-repeat center center;
 }
 
 .modal-body {
