@@ -1,31 +1,45 @@
 <div class="modal-header bg-primary">
-	<h4 class="modal-title pull-left">Users <i class="fa fa-lg fa-fw fa-spinner fa-spin" ng-show="loading == true"></i></h4>
-	<i class="fa fa-lg fa-close pull-right" ng-click="$dismiss('cancel')"></i>
+	<h4 class="modal-title pull-left">Users</h4>
+	<i class="fa fa-2x fa-close pull-right" role="button" ng-click="$dismiss('cancel')"></i>
+	<i class="fa fa-2x fa-spinner fa-spin" ng-show="loading == true"></i>
 </div>
 <div class="modal-body">
-	<table class="table table-condensed">
-		<thead>
-			<tr>
-				<th>Name</th>
-				<th>Last Modified</th>
-				<th>Last Login</th>
-				<th>Actions</th>
-			</tr>
-		</thead>
-		<tbody>
-			<tr ng-if="users.length > 0" ng-repeat="user in users | orderBy: 'username'" ng-model="user">
-				<td>{{user.username}}</td>
-				<td>{{user.last_modified | date: 'medium'}}</td>
-				<td>{{user.last_login | date: 'medium'}}</td>
-				<td><i class="fa fa-lg fa-fw fa-edit" title="Change Username" ng-click="changeUsername(user)"></i><i class="fa fa-lg fa-fw fa-user-secret" title="Change Password" ng-click="changePassword(user)"></i> <i class="fa fa-lg fa-fw fa-trash" title="Delete" ng-click="deleteUser(user)"></i></td>
-			</tr>
-			<tr ng-if="users.length == 0">
-				<td colspan="4" class="text-center">No users</td>
-			</tr>
-			<tr>
-				<td class="vertical-center" colspan="3"><input type="text" class="form-control" ng-model="username" autofocus></input></td>
-				<td class="vertical-center"><i class="fa fa-lg fa-fw fa-user-plus" title="Add User" ng-disabled="!username" ng-click="addUser()"></i></td>
-			</tr>
-		</tbody>
-	</table>
+	<form name="new_user">
+		<table class="table table-condensed">
+			<thead>
+				<tr>
+					<th>Name</th>
+					<th>Last Modified</th>
+					<th>Last Login</th>
+					<th>Actions</th>
+				</tr>
+			</thead>
+			<tbody ng-switch="users.length">
+				<tr ng-switch-default ng-repeat="user in users | orderBy: 'username'" ng-model="user">
+					<td role="button" ng-click="loginUser(user)">{{user.username}}</td>
+					<td>{{user.last_modified | date: 'medium'}}</td>
+					<td>{{user.last_login | date: 'medium'}}</td>
+					<td>
+						<i class="fa fa-lg fa-fw fa-edit" role="button" title="Change Username" ng-click="changeUsername(user)"></i>
+						<i class="fa fa-lg fa-fw fa-user-secret" role="button" title="Change Password" ng-click="changePassword(user)"></i>
+						<i class="fa fa-lg fa-fw fa-trash" role="button" title="Delete" ng-click="deleteUser(user)"></i>
+					</td>
+				</tr>
+				<tr ng-switch-when="0">
+					<td colspan="4" class="text-center">No users</td>
+				</tr>
+				<tr>
+					<td class="vertical-center" colspan="2">
+						<input type="text" class="form-control" placeholder="Enter username" ng-minlength="1" ng-trim="true" ng-model="username" required autofocus ng-enter="new_user.$valid && addUser()"></input>
+					</td>
+					<td class="vertical-center">
+						<input type="password" class="form-control" placeholder="Enter password" ng-minlength="3" ng-model="password" required ng-enter="new_user.$valid && addUser()"></input>
+					</td>
+					<td class="vertical-center">
+						<i role="button" class="fa fa-lg fa-fw fa-user-plus" ng-class="new_user.$valid ? '' : 'text-muted'" title="Add User" ng-click="new_user.$valid && addUser()"></i>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</form>
 </div>

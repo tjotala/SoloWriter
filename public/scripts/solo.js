@@ -320,9 +320,9 @@ app.factory("User", function($http) {
 			});
 		};
 
-		this.login = function() {
+		this.login = function(password) {
 			var self = this;
-			return $http.post("/api/login", { username: self.username, password: self.password });
+			return $http.post("/api/login", { username: self.username, password: password });
 		};
 
 		this.logout = function() {
@@ -447,12 +447,21 @@ app.controller("SoloWriter", function($scope, $window, $log, $http, $interval, $
 		$scope.currentUser = undefined;
 	};
 
-	$scope.modifyUsers = function() {
+	$scope.selectUser = function() {
 		$uibModal.open({
 			animation: false,
 			templateUrl: "users.html",
-			controller: "UsersCtrl"
-		}).result.finally(function () {
+			controller: "UsersCtrl",
+			resolve: {
+				currentUser: function() {
+					return $scope.currentUser;
+				}
+			}
+		}).result.then(function success(response) {
+			if (angular.isDefined(response.user)) {
+				$scope.currentUser = response.user;
+			}
+		}).finally(function () {
 			$scope.setFocus();
 		});
 	};
@@ -693,9 +702,11 @@ app.controller("LoginCtrl", function ($scope, $log, $uibModalInstance, Users, us
 	$scope.refreshUsers();
 });
 
-app.controller("UsersCtrl", function ($scope, $log, $uibModalInstance, Users, User, Password, MessageBox) {
+app.controller("UsersCtrl", function ($scope, $log, $uibModalInstance, Users, User, Password, MessageBox, currentUser) {
 	$scope.users = undefined;
-	$scope.username = undefined;
+	$scope.currentUser = currentUser;
+	$scope.username = "";
+	$scope.password = "";
 
 	$scope.refreshUsers = function() {
 		$scope.loading = true;
@@ -706,20 +717,42 @@ app.controller("UsersCtrl", function ($scope, $log, $uibModalInstance, Users, Us
 		});
 	};
 
-	$scope.addUser = function() {
-		Password.challenge().then(function success(password) {
+	$scope.loginUser = function(user) {
+		Password.challenge({
+			for: user.username
+		}).then(function success(response) {
 			$scope.loading = true;
-			Users.create($scope.username, password.password).then(function success(list) {
-				$scope.users = list;
-				$scope.username = undefined;
+			user.login(response.password).then(function success() {
+				$uibModalInstance.close({ user: user });
+			}, function failure() {
+				MessageBox.error({
+					message: "Failed to login as " + user.username
+				});
 			}).finally(function() {
 				$scope.loading = false;
 			});
 		});
 	};
 
+	$scope.addUser = function() {
+		$scope.loading = true;
+		Users.create($scope.username.trim(), $scope.password).then(function success(list) {
+			$scope.users = list;
+			$scope.username = undefined;
+			$scope.password = undefined;
+		}, function failure(response) {
+			MessageBox.error({
+				message: "Failed to create new user " + $scope.username + ", " + response.data.error
+			});
+		}).finally(function() {
+			$scope.loading = false;
+		});
+	};
+
 	$scope.deleteUser = function(user) {
-		Password.challenge().then(function success(password) {
+		Password.challenge({
+			for: user.username
+		}).then(function success(password) {
 			$scope.loading = true;
 			Users.remove(user.username, password.password).then(function success(list) {
 				$scope.users = list;
@@ -735,7 +768,7 @@ app.controller("UsersCtrl", function ($scope, $log, $uibModalInstance, Users, Us
 
 	$scope.changeUsername = function(user) {
 		Password.challenge({
-			title: "Enter New Username",
+			title: "Enter New Username for " + user.username,
 			label: "New Username",
 			field: "new_username",
 			value: user.username
@@ -755,10 +788,11 @@ app.controller("UsersCtrl", function ($scope, $log, $uibModalInstance, Users, Us
 
 	$scope.changePassword = function(user) {
 		Password.challenge({
-			title: "Enter New Password",
+			title: "Enter New Password for " + user.username,
 			label: "New Password",
 			field: "new_password",
-			value: undefined
+			value: undefined,
+			is_password: true
 		}).then(function success(response) {
 			$scope.loading = true;
 			user.changePassword(response.password, response.new_password).then(function success() {
@@ -797,7 +831,13 @@ app.service("Password", function($uibModal) {
 app.controller("PasswordCtrl", function ($scope, $uibModalInstance, extra) {
 	$scope.extra = angular.copy(extra);
 	$scope.password = undefined;
-	$scope.title = angular.isDefined(extra.title) ? extra.title : "Enter Password";
+	if (angular.isDefined(extra.title)) {
+		$scope.title = extra.title;
+	} else if (angular.isDefined(extra.for)) {
+		$scope.title = "Enter Password for " + extra.for;
+	} else {
+		$scope.title = "Enter Password";
+	}
 
 	$scope.ok = function() {
 		var result = { password: $scope.password };

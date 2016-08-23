@@ -1,6 +1,7 @@
 <div class="modal-header bg-success">
-	<h4 class="modal-title pull-left">Storage Settings <i class="fa fa-lg fa-fw fa-spinner fa-spin" ng-show="loading == true"></i></h4>
-	<i class="fa fa-lg fa-close pull-right" ng-click="$dismiss('cancel')"></i>
+	<h4 class="modal-title pull-left">Storage Settings</h4>
+	<i role="button" class="fa fa-2x fa-close pull-right" ng-click="$dismiss('cancel')"></i>
+	<i class="fa fa-2x fa-spinner fa-spin pull-right" ng-show="loading == true"></i>
 </div>
 <div class="modal-body">
 	<table class="table table-condensed">
@@ -18,9 +19,9 @@
 			<tr ng-repeat="volume in volumes">
 				<td>
 					<i ng-show="loading == volume.id" class="fa fa-lg fa-fw fa-spinner fa-spin"></i>
-					<i ng-show="loading != volume.id && volume.mounted" class="fa fa-lg fa-fw" title="Select" ng-class="isVolumeSelected(volume) ? 'fa-check-square-o' : 'fa-square-o'" ng-click="selectVolume(volume)"></i>
-					<i ng-show="loading != volume.id && volume.mounted && volume.can_unmount" class="fa fa-lg fa-fw fa-unlink" title="Disconnect" ng-click="unmountVolume(volume)"></i>
-					<i ng-show="loading != volume.id && !volume.mounted && volume.can_mount" class="fa fa-lg fa-fw fa-link" title="Connect" ng-click="mountVolume(volume)"></i>
+					<i ng-show="loading != volume.id && volume.mounted" role="button" class="fa fa-lg fa-fw" title="Select" ng-class="isVolumeSelected(volume) ? 'fa-check-square-o' : 'fa-square-o'" ng-click="selectVolume(volume)"></i>
+					<i ng-show="loading != volume.id && volume.mounted && volume.can_unmount" role="button" class="fa fa-lg fa-fw fa-unlink" title="Disconnect" ng-click="unmountVolume(volume)"></i>
+					<i ng-show="loading != volume.id && !volume.mounted && volume.can_mount" role="button" class="fa fa-lg fa-fw fa-link" title="Connect" ng-click="mountVolume(volume)"></i>
 				</td>
 				<td><i class="fa fa-lg fa-fw" ng-class="volume.getIcon()"></i></td>
 				<td>{{volume.label}}</td>
