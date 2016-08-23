@@ -62,7 +62,7 @@ html {
 }
 
 .modal-body {
-	max-height: 360px !important;
+	max-height: 350px !important;
 	overflow-y: auto !important;
 }
 
