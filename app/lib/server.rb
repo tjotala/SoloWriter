@@ -47,27 +47,27 @@ class SoloServer < Sinatra::Base
 	end
 
 	error AuthenticationError do
-		halt 401, { error: e.message }.to_json
+		halt 401, { error: env['sinatra.error'].message }.to_json
 	end
 
 	error AuthorizationError do
-		halt 403, { error: e.message }.to_json
+		halt 403, { error: env['sinatra.error'].message }.to_json
 	end
 
 	error NoSuchResourceError do
- 		halt 404, { error: e.message }.to_json
+ 		halt 404, { error: env['sinatra.error'].message }.to_json
 	end
 
 	error ConflictedResourceError do
- 		halt 409, { error: e.message }.to_json
+ 		halt 409, { error: env['sinatra.error'].message }.to_json
 	end
 
 	error InternalError do
-		halt 500, { error: e.message }.to_json
+		halt 500, { error: env['sinatra.error'].message }.to_json
 	end
 
 	error NotImplementedError do
-		halt 501, { error: e.message }.to_json
+		halt 501, { error: env['sinatra.error'].message }.to_json
 	end
 
 	helpers do
