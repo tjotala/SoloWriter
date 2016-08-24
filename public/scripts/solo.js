@@ -440,37 +440,6 @@ app.controller("SoloWriter", function($scope, $window, $log, $http, $interval, $
 		return angular.isDefined($scope.currentUser);
 	};
 
-	$scope.login = function() {
-		$uibModal.open({
-			animation: false,
-			templateUrl: "login.html",
-			controller: "LoginCtrl",
-			resolve: {
-				user: function() {
-					return angular.copy($scope.currentUser);
-				}
-			}
-		}).result.then(function success(selected) {
-			$log.debug("logging in as '" + selected.username + "'");
-			$scope.currentUser = new User(selected);
-			$scope.currentUser.login().then(function success() {
-				$log.info("logged in as '" + selected.username + "'");
-			}, function failure() {
-				$scope.currentUser = undefined;
-				Confirm.error({
-					message: "Failed to login as '" + selected.username + "'"
-				});
-			});
-		}).finally(function () {
-			setFocus(CONTENT_ID);
-		});
-	};
-
-	$scope.logout = function() {
-		$scope.currentUser.logout();
-		$scope.currentUser = undefined;
-	};
-
 	$scope.selectUser = function() {
 		$uibModal.open({
 			animation: false,
@@ -716,28 +685,6 @@ app.controller("AutoSaveCtrl", function ($scope, $uibModalInstance, autoSave, AU
 	$scope.ok = function() {
 		$uibModalInstance.close({ frequency: $scope.frequency, tempName: angular.copy($scope.tempName) });
 	};
-});
-
-app.controller("LoginCtrl", function ($scope, $log, $uibModalInstance, Users, user) {
-	$scope.users = undefined;
-	$scope.user = undefined;
-	$scope.password = "";
-
-	$scope.refreshUsers = function() {
-		$scope.loading = true;
-		Users.getList().then(function success(list) {
-			$scope.users = list;
-			$scope.user = $scope.users[0];
-		}).finally(function() {
-			$scope.loading = false;
-		});
-	};
-
-	$scope.ok = function() {
-		$uibModalInstance.close({ username: $scope.user.username, password: $scope.password });
-	};
-
-	$scope.refreshUsers();
 });
 
 app.controller("UsersCtrl", function ($scope, $log, $uibModalInstance, Users, User, Password, MessageBox, currentUser) {
