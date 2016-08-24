@@ -1,6 +1,6 @@
 "use strict";
 
-var app = angular.module("App", [ "ui.bootstrap" ]);
+var app = angular.module("App", [ "ui.bootstrap", "ngTouch", "ngAnimate", "ngIdle" ]);
 
 function getById(id) {
 	return document.getElementById(id);
@@ -17,8 +17,8 @@ function setSelectionRange(input, selStart, selEnd) {
 	} else if (input.createTextRange) {
 		var range = input.createTextRange();
 		range.collapse(true);
-		range.moveEnd('character', selEnd);
-		range.moveStart('character', selStart);
+		range.moveEnd("character", selEnd);
+		range.moveStart("character", selStart);
 		range.select();
 	}
 }
@@ -40,8 +40,17 @@ app.constant("LOCAL_VOLUME_ID", "local");
 app.constant("DEFAULT_DOCUMENT_NAME", "NoName");
 app.constant("AUTOSAVE_FREQUENCY_NEVER", 0);
 
-app.config(function($logProvider){
-  $logProvider.debugEnabled(false);
+app.config(function($logProvider, IdleProvider, KeepaliveProvider){
+	$logProvider.debugEnabled(false);
+
+	IdleProvider.idle(10); // in seconds
+	IdleProvider.timeout(20); // in seconds
+	IdleProvider.autoResume(true);
+	IdleProvider.keepalive(true);
+});
+
+app.run(function(Idle){
+	Idle.watch();
 });
 
 app.factory("Settings", function($window, $interpolate, CONTENT_ID, DEFAULT_DOCUMENT_NAME) {
@@ -60,6 +69,9 @@ app.factory("Settings", function($window, $interpolate, CONTENT_ID, DEFAULT_DOCU
 	}
 	var mainMode = true; // true = main, false = settings
 	var devMode = true;  // true = development mode, false = not development mode
+
+	var slideShowMode = false;
+	var slideShowInterval = 10000;
 
 	return {
 		isDevelopment: function() {
@@ -80,6 +92,22 @@ app.factory("Settings", function($window, $interpolate, CONTENT_ID, DEFAULT_DOCU
 
 		isSettingsMode: function() {
 			return !mainMode;
+		},
+
+		enterSlideShow: function() {
+			slideShowMode = true;
+		},
+
+		exitSlideShow: function() {
+			slideShowMode = false;
+		},
+
+		isSlideShowMode: function() {
+			return slideShowMode;
+		},
+
+		getSlideShowInterval: function() {
+			return slideShowInterval;
 		},
 
 		getTextSize: function() {
@@ -408,12 +436,75 @@ app.factory("Users", function($http, User) {
 	};
 });
 
-app.controller("SoloWriter", function($scope, $window, $log, $http, $interval, $timeout, $uibModal, Settings, User, Volumes, Volume, Document, MessageBox, CONTENT_ID, AUTOSAVE_FREQUENCY_NEVER) {
+app.factory("Lock", function($q, User, Password, MessageBox) {
+	var UNLOCKED = 0, LOCKED = 1, CHALLENGING = 2;
+	var lockMode = 0;
+
+	return {
+		isUnlocked: function() {
+			return lockMode == UNLOCKED;
+		},
+
+		isLocked: function() {
+			return lockMode == LOCKED;
+		},
+
+		isChallenging: function() {
+			return lockMode == CHALLENGING;
+		},
+
+		unlock: function() {
+			lockMode = UNLOCKED;
+		},
+
+		lock: function() {
+			lockMode = LOCKED;
+		},
+
+		challenge: function(user, timeout) {
+			return $q(function(resolve, reject) {
+				switch (lockMode) {
+					case UNLOCKED:
+						reject("not locked");
+						break;
+
+					case LOCKED:
+						lockMode = CHALLENGING;
+						Password.challenge({
+							title: "Enter Password to Unlock " + user.username,
+							timeout: timeout
+						}).then(function success(response) {
+							user.login(response.password).then(function success() {
+								lockMode = UNLOCKED;
+								resolve("unlocked");
+							}, function failure() {
+								lockMode = LOCKED;
+								MessageBox.error({
+									message: "Uh oh, you did not say the magic word!",
+									timeout: timeout
+								});
+								reject("wrong password");
+							});
+						}, function failure() {
+							lockMode = LOCKED;
+							reject("dismissed password dialog");
+						});
+						break;
+
+					case CHALLENGING:
+						reject("already challenging");
+						break;
+				}
+			});
+		},
+	};
+});
+
+app.controller("SoloWriterCtrl", function($scope, $window, $log, $http, $interval, $timeout, $uibModal, Idle, Keepalive, Settings, Lock, User, Volumes, Volume, Document, MessageBox, CONTENT_ID, AUTOSAVE_FREQUENCY_NEVER) {
 	$scope.settings = Settings;
 	$scope.currentVolume = undefined;
 	$scope.currentDocument = new Document();
 	$scope.currentUser = undefined;
-	var autoSaver = undefined;
 
 	Volumes.getLocal().then(function success(local) {
 		$scope.currentVolume = local;
@@ -553,33 +644,94 @@ app.controller("SoloWriter", function($scope, $window, $log, $http, $interval, $
 		}).result.then(function success(selected) {
 			$scope.settings.setAutoSaveFrequency(selected.frequency);
 			$scope.settings.setAutoSaveTempName(selected.tempName);
+			$scope.startAutoSave();
 		}).finally(function() {
 			setFocus(CONTENT_ID);
 		});
 	};
 
 	$scope.startAutoSave = function() {
-		$scope.stopAutoSave();
-		if ($scope.settings.getAutoSaveFrequency() != AUTOSAVE_FREQUENCY_NEVER) {
-			$log.debug(now8601() + " -- starting autosaver");
-			autoSaver = $interval(function() {
-				if ($scope.currentDocument.shouldSave()) {
-					$log.debug(now8601() + " -- autosaving");
-					$scope.currentDocument.save($scope.currentVolume, $scope.settings.getAutoSaveTempName($scope.currentDocument.getName()).name, true);
-				} else {
-					$log.debug(now8601() + " -- skipped autosave, nothing to save");
-				}
-			}, $scope.settings.getAutoSaveFrequencyAsMs());
+		if ($scope.settings.getAutoSaveFrequency() == AUTOSAVE_FREQUENCY_NEVER) {
+			// do nothing
+		} else {
+			Keepalive.setInterval($scope.settings.getAutoSaveFrequencyAsMs() / 1000);
 		}
 	};
 
-	$scope.stopAutoSave = function() {
-		if (angular.isDefined(autoSaver)) {
-			$log.debug(now8601() + " -- stopping autosaver");
-			$interval.cancel(autoSaver);
-			autoSaver = undefined;
+	$scope.autoSave = function() {
+		if ($scope.currentDocument.shouldSave()) {
+			$log.info(now8601() + " -- autosaving");
+			$scope.currentDocument.save($scope.currentVolume, $scope.settings.getAutoSaveTempName($scope.currentDocument.getName()).name, true);
+		} else {
+			$log.debug(now8601() + " -- skipped autosave, nothing to save");
 		}
 	}
+
+	$scope.startSlideShow = function() {
+		$log.info("starting slideshow");
+		$scope.settings.enterSlideShow();
+		$timeout(function () {
+			// no-op to flush rendering
+		});
+	};
+
+	$scope.endSlideShow = function() {
+		$log.info("stopping slideshow");
+		$scope.settings.exitSlideShow();
+		$timeout(function () {
+			// no-op to flush rendering
+		});
+	};
+
+	$scope.lock = function() {
+		if ($scope.isLoggedIn()) {
+			Lock.lock();
+		}
+		$scope.autoSave();
+		$scope.startSlideShow();
+	};
+
+	$scope.unlock = function() {
+		if (Lock.isLocked()) {
+			Lock.challenge($scope.currentUser, Idle.getTimeout() * 1000 / 3).then(function success() {
+				$scope.endSlideShow();
+			});
+		} else {
+			$scope.endSlideShow();
+		}
+	};
+
+	$scope.$on("IdleStart", function() {
+		// the user appears to have gone idle
+		$log.debug("IdleStart");
+	});
+
+	$scope.$on("IdleWarn", function(e, countdown) {
+		// follows after the IdleStart event, but includes a countdown until the user is considered timed out
+		// the countdown arg is the number of seconds remaining until then.
+		// you can change the title or display a warning dialog from here.
+		// you can let them resume their session by calling Idle.watch()
+		$log.debug("IdleWarn");
+	});
+
+	$scope.$on("IdleTimeout", function() {
+		// the user has timed out (meaning idleDuration + timeout has passed without any activity)
+		// this is where you"d log them out
+		$log.debug("IdleTimeout");
+		$scope.lock();
+	});
+
+	$scope.$on("IdleEnd", function() {
+		// the user has come back from AFK and is doing stuff. if you are warning them, you can use this to hide the dialog
+		$log.debug("IdleEnd");
+		$scope.unlock();
+	});
+
+	$scope.$on("Keepalive", function() {
+		// do something to keep the user's session alive
+		$log.debug("Keepalive");
+		$scope.autoSave();
+	});
 
 	$scope.startAutoSave();
 });
@@ -925,6 +1077,17 @@ app.controller("MessageBoxCtrl", function ($scope, $uibModalInstance, $timeout, 
 		$uibModalInstance.dismiss(reason || "cancel");
 	};
 });
+
+app.controller("SlideShowCtrl", function ($scope) {
+	$scope.interval = $scope.settings.getSlideShowInterval();
+	$scope.active = 0;
+
+	$scope.slides = [ ];
+	for(var i = 1; i <= 80; ++i) {
+		$scope.slides.push({
+			image: "/images/slides/slide-" + i + ".jpg"
+		});
+	}
 });
 
 app.filter("bytes", function() {
@@ -937,7 +1100,7 @@ app.filter("bytes", function() {
 	}
 });
 
-app.directive('ngEnter', function () {
+app.directive("ngEnter", function () {
 	return function (scope, element, attrs) {
 		element.bind("keydown keypress", function (event) {
 			if(event.which === 13) {

@@ -3,20 +3,30 @@
 	<head>
 		<title>SoloWriter</title>
 		<link rel="icon" type="image/x-icon" href="favicon.ico">
-		<link rel="stylesheet" type="text/css" href="styles/bootstrap-yeti.min.css">
+		<link rel="stylesheet" type="text/css" href="styles/bootstrap.min.css">
 		<link rel="stylesheet" type="text/css" href="styles/font-awesome.min.css">
 		<link rel="stylesheet" type="text/css" href="styles/solo.css">
 		<script type="text/javascript" src="scripts/angular.min.js"></script>
+		<script type="text/javascript" src="scripts/angular-touch.min.js"></script>
+		<script type="text/javascript" src="scripts/angular-animate.min.js"></script>
+		<script type="text/javascript" src="scripts/angular-idle.js"></script>
 		<script type="text/javascript" src="scripts/ui-bootstrap-tpls-2.0.1.min.js"></script>
 		<script type="text/javascript" src="scripts/solo.js"></script>
 	</head>
-	<body ng-controller="SoloWriter">
-		<div id="body">
+	<body ng-controller="SoloWriterCtrl">
+		<div ng-if="settings.isSlideShowMode()" ng-controller="SlideShowCtrl" class="slideshow">
+			<div uib-carousel interval="interval" active="active" no-pause="true" no-wrap="false">
+				<div uib-slide ng-repeat="slide in slides" index="$index">
+					<img ng-src="{{slide.image}}">
+				</div>
+			</div>
+		</div>
+		<div id="body" ng-hide="settings.isSlideShowMode()">
 			<div id="editor">
 				<textarea id="content" ng-attr-placeholder="Enter text..." ng-model="currentDocument.content" ng-change="setDirty()" ng-style="{ 'font-size': settings.getTextSize() }" ng-class="settings.hasBackgroundImage() ? 'logo' : ''" wrap="soft" autofocus></textarea>
 			</div>
 		</div>
-		<div id="footer" ng-switch="settings.isSettingsMode()">
+		<div id="footer" ng-hide="settings.isSlideShowMode()" ng-switch="settings.isSettingsMode()">
 			<div ng-switch-when="false" class="ng-cloak">
 				<div class="pull-left">
 					<button class="btn btn-warning navbar-btn" ng-click="resetDoc(true)"><i class="fa fa-lg fa-file-text-o"></i>&nbsp;New</button>
@@ -25,12 +35,12 @@
 					<input id="name" type="text" placeholder="Enter name..." ng-model="currentDocument.name" ng-minlength="1" ng-maxlength="256" ng-trim="true" ng-change="setDirty()"></input>
 				</div>
 				<div class="pull-right">
+					<button class="btn btn-warning navbar-btn" ng-click="lock()"><i class="fa fa-lg fa-lock"></i></button>
 					<button class="btn btn-info navbar-btn" ng-click="settings.enterSettings()"><i class="fa fa-lg fa-gear"></i>&nbsp;Settings</button>
-					<div class="btn-group" role="group" ng-if="settings.isDevelopment()">
-						<button class="btn btn-warning navbar-btn" ng-click="reload()"><i class="fa fa-lg fa-refresh"></i>&nbsp;Refresh</button>
-						<button class="btn btn-danger navbar-btn" ng-disabled="currentDocument.isDirty()" ng-click="quit()"><i class="fa fa-lg fa-power-off"></i>&nbsp;Quit</button>
+					<div class="btn-group" role="group" ng-disabled="currentDocument.isDirty()" ng-switch="settings.isDevelopment()">
+						<button class="btn btn-danger navbar-btn" ng-switch-when="true" ng-click="quit()"><i class="fa fa-lg fa-power-off"></i>&nbsp;Quit</button>
+						<button class="btn btn-danger navbar-btn" ng-switch-when="false" ng-click="shutdown()"><i class="fa fa-lg fa-power-off"></i>&nbsp;Power Off</button>
 					</div>
-					<button class="btn btn-danger navbar-btn" ng-disabled="currentDocument.isDirty()" ng-click="shutdown()" ng-if="!settings.isDevelopment()"><i class="fa fa-lg fa-power-off"></i>&nbsp;Power Off</button>
 				</div>
 			</div>
 			<div ng-switch-when="true" class="ng-cloak">
@@ -44,6 +54,7 @@
 				<button class="btn btn-primary navbar-btn" ng-click="selectStorage()"><i class="fa fa-lg fa-database"></i>&nbsp;Storage</button>
 				<button class="btn btn-primary navbar-btn" ng-click="selectAutoSave()"><i class="fa fa-lg fa-hourglass-start"></i>&nbsp;AutoSave</button>
 				<button class="btn btn-primary navbar-btn" title="Toggle Development Mode" ng-click="settings.toggleDevelopment()"><i class="fa fa-lg" ng-class="settings.isDevelopment() ? 'fa-toggle-on' : 'fa-toggle-off'"></i>&nbsp;<i class="fa fa-lg fa-gear"></i></button>
+				<button class="btn btn-warning navbar-btn" ng-if="settings.isDevelopment()" ng-click="reload()"><i class="fa fa-lg fa-refresh"></i>&nbsp;Refresh</button>
 				<button class="btn btn-warning navbar-btn" ng-click="selectUser()"><i class="fa fa-lg fa-users"></i>&nbsp;Users</button>
 			</div>
 		</div>
