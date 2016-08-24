@@ -1,3 +1,4 @@
 #!/bin/sh
-matchbox-window-manager &
-ruby $HOME/solo/app/server.rb > $HOME/solo/logs/solo.log 2>&1
+mkdir -p /var/log/solo
+matchbox-window-manager > /var/log/solo/wm.log 2>&1 &
+ruby $HOME/solo/app/server.rb > /var/log/solo/server.log 2>&1
