@@ -623,7 +623,7 @@ app.controller("DocumentsCtrl", function ($scope, $uibModal, $uibModalInstance, 
 	$scope.deleteDoc = function(doc) {
 		MessageBox.confirm({
 			name: doc.name,
-			message: "Deleting document '" + doc.name + "'. Are you sure?"
+			message: "Deleting document [" + doc.name + "]. Are you sure?"
 		}).then(function ok() {
 			doc.remove($scope.currentVolume);
 			doc.removed = true;
@@ -830,7 +830,7 @@ app.service("Password", function($uibModal) {
 	};
 });
 
-app.controller("PasswordCtrl", function ($scope, $uibModalInstance, extra) {
+app.controller("PasswordCtrl", function ($scope, $uibModalInstance, $timeout, extra) {
 	$scope.extra = angular.copy(extra);
 	$scope.password = undefined;
 	if (angular.isDefined(extra.title)) {
@@ -841,19 +841,39 @@ app.controller("PasswordCtrl", function ($scope, $uibModalInstance, extra) {
 		$scope.title = "Enter Password";
 	}
 
+	if (angular.isDefined($scope.extra.timeout)) {
+		$scope.autoClose = $timeout(function() {
+			$scope.cancel("timeout");
+		}, $scope.extra.timeout);
+	} else {
+		$scope.autoClose = undefined;
+	}
+
+	function cleanup() {
+		if (angular.isDefined($scope.autoClose)) {
+			$timeout.cancel($scope.autoClose);
+		}
+	}
+
 	$scope.ok = function() {
+		cleanup();
 		var result = { password: $scope.password };
 		if (angular.isDefined($scope.extra)) {
 			result[$scope.extra.field] = $scope.extra.value;
 		}
 		$uibModalInstance.close(result);
 	};
+
+	$scope.cancel = function(reason) {
+		cleanup();
+		$uibModalInstance.dismiss(reason || "cancel");
+	};
 });
 
 app.service("MessageBox", function($uibModal) {
 	this.confirm = function(options) {
 		options.title || (options.title = "Confirm");
-		options.message || (options.message = "Unsaved modifications in document '" + options.name + "' will be lost. Are you sure?");
+		options.message || (options.message = "Unsaved modifications in document [" + options.name + "] will be lost. Are you sure?");
 		return this.prompt(options);
 	};
 
@@ -877,8 +897,34 @@ app.service("MessageBox", function($uibModal) {
 	};
 });
 
-app.controller("MessageBoxCtrl", function ($scope, $uibModalInstance, options) {
+app.controller("MessageBoxCtrl", function ($scope, $uibModalInstance, $timeout, options) {
 	$scope.options = angular.copy(options);
+
+	if (angular.isDefined($scope.options.timeout)) {
+		$scope.autoClose = $timeout(function () {
+			$scope.cancel("timeout");
+		}, $scope.options.timeout);
+	} else {
+		$scope.autoClose = undefined;
+	}
+
+	function cleanup() {
+		if (angular.isDefined($scope.autoClose)) {
+			$timeout.cancel($scope.autoClose);
+			$scope.autoClose = undefined;
+		}
+	}
+
+	$scope.ok = function() {
+		cleanup();
+		$uibModalInstance.close("ok");
+	};
+
+	$scope.cancel = function(reason) {
+		cleanup();
+		$uibModalInstance.dismiss(reason || "cancel");
+	};
+});
 });
 
 app.filter("bytes", function() {
