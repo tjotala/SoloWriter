@@ -231,7 +231,7 @@ app.factory("Document", function($http, DEFAULT_DOCUMENT_NAME) {
 
 		this.save = function(volume, nameOverride, autoSave) {
 			var self = this;
-			return $http.put(this.getPath(volume, nameOverride), self.content).then(function success(response) {
+			return $http.put(this.getPath(volume, nameOverride), self.content, { headers: { "Content-Type": "text/plain" } }).then(function success(response) {
 				if (angular.isDefined(autoSave) && autoSave) {
 					return self;
 				} else {
