@@ -69,3 +69,8 @@ html {
 .vertical-center {
 	vertical-align: middle !important;
 }
+
+/* from AngularJS-UI */
+.nav, .pagination, .carousel, .panel-title a {
+	cursor: pointer;
+}
