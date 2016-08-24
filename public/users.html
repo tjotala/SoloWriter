@@ -15,14 +15,14 @@
 				</tr>
 			</thead>
 			<tbody ng-switch="users.length">
-				<tr ng-switch-default ng-repeat="user in users | orderBy: 'username'" ng-model="user">
-					<td role="button" ng-click="loginUser(user)">{{user.username}}</td>
+				<tr ng-switch-default ng-repeat="user in users | orderBy: 'username'" ng-model="user" ng-class="isCurrentUser(user) ? 'bg-warning' : ''">
+					<td role="button" ng-class="isCurrentUser(user) ? 'text-warning' : 'text-success'" ng-click="isCurrentUser(user) ? logoutUser(user) : loginUser(user)"><i class="fa fa-lg fa-fw" ng-class="isCurrentUser(user) ? 'fa-lock' : 'fa-unlock'"></i>&nbsp;{{user.username}}</td>
 					<td>{{user.last_modified | date: 'medium'}}</td>
 					<td>{{user.last_login | date: 'medium'}}</td>
 					<td>
 						<i class="fa fa-lg fa-fw fa-edit" role="button" title="Change Username" ng-click="changeUsername(user)"></i>
 						<i class="fa fa-lg fa-fw fa-user-secret" role="button" title="Change Password" ng-click="changePassword(user)"></i>
-						<i class="fa fa-lg fa-fw fa-trash" role="button" title="Delete" ng-click="deleteUser(user)"></i>
+						<i class="fa fa-lg fa-fw fa-trash" role="button" title="Delete" ng-click="deleteUser(user)"></i>						
 					</td>
 				</tr>
 				<tr ng-switch-when="0">
@@ -30,10 +30,10 @@
 				</tr>
 				<tr>
 					<td class="vertical-center" colspan="2">
-						<input type="text" class="form-control" placeholder="Enter username" ng-minlength="1" ng-trim="true" ng-model="username" required autofocus ng-enter="new_user.$valid && addUser()"></input>
+						<input type="text" class="form-control input-sm" placeholder="Enter username" ng-minlength="1" ng-trim="true" ng-model="username" required autofocus ng-enter="new_user.$valid && addUser()"></input>
 					</td>
-					<td class="vertical-center">
-						<input type="password" class="form-control" placeholder="Enter password" ng-minlength="3" ng-model="password" required ng-enter="new_user.$valid && addUser()"></input>
+					<td>
+						<input type="password" class="form-control input-sm" placeholder="Enter password" ng-minlength="3" ng-model="password" required ng-enter="new_user.$valid && addUser()"></input>
 					</td>
 					<td class="vertical-center">
 						<i role="button" class="fa fa-lg fa-fw fa-user-plus" ng-class="new_user.$valid ? '' : 'text-muted'" title="Add User" ng-click="new_user.$valid && addUser()"></i>

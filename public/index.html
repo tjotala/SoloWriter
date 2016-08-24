@@ -13,7 +13,7 @@
 	<body ng-controller="SoloWriter">
 		<div id="body">
 			<div id="editor">
-				<textarea id="content" ng-attr-placeholder="Enter text..." ng-model="currentDocument.content" ng-change="currentDocument.setDirty()" ng-style="{ 'font-size': settings.getTextSize() }" ng-class="settings.hasBackgroundImage() ? 'logo' : ''"></textarea>
+				<textarea id="content" ng-attr-placeholder="Enter text..." ng-model="currentDocument.content" ng-change="setDirty()" ng-style="{ 'font-size': settings.getTextSize() }" ng-class="settings.hasBackgroundImage() ? 'logo' : ''" wrap="soft" autofocus></textarea>
 			</div>
 		</div>
 		<div id="footer" ng-switch="settings.isSettingsMode()">
@@ -22,7 +22,7 @@
 					<button class="btn btn-warning navbar-btn" ng-click="resetDoc(true)"><i class="fa fa-lg fa-file-text-o"></i>&nbsp;New</button>
 					<button class="btn btn-success navbar-btn" ng-click="openDoc(true)"><i class="fa fa-lg fa-folder-open-o"></i>&nbsp;Open</button>
 					<button class="btn btn-primary navbar-btn" ng-click="saveDoc()" ng-disabled="!currentDocument.canSave()"><i class="fa fa-lg fa-save"></i>&nbsp;Save</button>
-					<input id="name" type="text" placeholder="Enter name..." ng-model="currentDocument.name" ng-minlength="1" ng-maxlength="256" ng-trim="true" ng-change="currentDocument.setDirty()"></input>
+					<input id="name" type="text" placeholder="Enter name..." ng-model="currentDocument.name" ng-minlength="1" ng-maxlength="256" ng-trim="true" ng-change="setDirty()"></input>
 				</div>
 				<div class="pull-right">
 					<button class="btn btn-info navbar-btn" ng-click="settings.enterSettings()"><i class="fa fa-lg fa-gear"></i>&nbsp;Settings</button>

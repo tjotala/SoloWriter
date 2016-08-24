@@ -1,3 +1,5 @@
+"use strict";
+
 var app = angular.module("App", [ "ui.bootstrap" ]);
 
 function getById(id) {
@@ -6,6 +8,27 @@ function getById(id) {
 
 function setFocus(id) {
 	getById(id).focus();
+}
+
+function setSelectionRange(input, selStart, selEnd) {
+	if (input.setSelectionRange) {
+		input.focus();
+		input.setSelectionRange(selStart, selEnd);
+	} else if (input.createTextRange) {
+		var range = input.createTextRange();
+		range.collapse(true);
+		range.moveEnd('character', selEnd);
+		range.moveStart('character', selStart);
+		range.select();
+	}
+}
+
+function setCaretToPos(id, pos) {
+	setSelectionRange(getById(id), pos, pos);
+}
+
+function scrollTop(id, pos) {
+	getById(id).scrollTop = pos;
 }
 
 function now8601() {
@@ -206,7 +229,7 @@ app.factory("Document", function($http, DEFAULT_DOCUMENT_NAME) {
 		};
 
 		this.reset = function(doc) {
-			if (!angular.isDefined(doc)) {
+			if (angular.isUndefined(doc)) {
 				doc = {
 					name: undefined,
 					content: undefined,
@@ -303,7 +326,7 @@ app.factory("User", function($http) {
 		};
 
 		this.reset = function(user) {
-			if (!angular.isDefined(user)) {
+			if (angular.isUndefined(user)) {
 				user = {
 					username: undefined
 				}
@@ -385,7 +408,7 @@ app.factory("Users", function($http, User) {
 	};
 });
 
-app.controller("SoloWriter", function($scope, $window, $log, $http, $interval, $uibModal, Settings, User, Volumes, Volume, Document, MessageBox, CONTENT_ID, AUTOSAVE_FREQUENCY_NEVER) {
+app.controller("SoloWriter", function($scope, $window, $log, $http, $interval, $timeout, $uibModal, Settings, User, Volumes, Volume, Document, MessageBox, CONTENT_ID, AUTOSAVE_FREQUENCY_NEVER) {
 	$scope.settings = Settings;
 	$scope.currentVolume = undefined;
 	$scope.currentDocument = new Document();
@@ -396,8 +419,9 @@ app.controller("SoloWriter", function($scope, $window, $log, $http, $interval, $
 		$scope.currentVolume = local;
 	});
 
-	$scope.setFocus = function() {
-		setFocus(CONTENT_ID);
+	$scope.setDirty = function() {
+		$scope.settings.clearBackgroundImage();
+		$scope.currentDocument.setDirty();
 	};
 
 	$scope.reload = function() {
@@ -438,7 +462,7 @@ app.controller("SoloWriter", function($scope, $window, $log, $http, $interval, $
 				});
 			});
 		}).finally(function () {
-			$scope.setFocus();
+			setFocus(CONTENT_ID);
 		});
 	};
 
@@ -454,15 +478,20 @@ app.controller("SoloWriter", function($scope, $window, $log, $http, $interval, $
 			controller: "UsersCtrl",
 			resolve: {
 				currentUser: function() {
-					return $scope.currentUser;
+					return angular.copy($scope.currentUser);
 				}
 			}
 		}).result.then(function success(response) {
 			if (angular.isDefined(response.user)) {
-				$scope.currentUser = response.user;
+				$scope.currentUser = angular.copy(response.user);
+			} else {
+				// the user must have logged out the current user
+				$scope.currentUser = undefined;
 			}
+		}, function failure(response) {
+			// no-op - we're just closing the dialog
 		}).finally(function () {
-			$scope.setFocus();
+			setFocus(CONTENT_ID);
 		});
 	};
 
@@ -475,8 +504,12 @@ app.controller("SoloWriter", function($scope, $window, $log, $http, $interval, $
 			});
 		} else {
 			$scope.currentDocument.reset();
-			$scope.setFocus();
-			Settings.setBackgroundImage();
+			$scope.settings.setBackgroundImage();
+			$timeout(function() {
+				setFocus(CONTENT_ID);
+				setCaretToPos(CONTENT_ID, 0);
+				scrollTop(CONTENT_ID, 0);
+			});
 		}
 	};
 
@@ -501,16 +534,21 @@ app.controller("SoloWriter", function($scope, $window, $log, $http, $interval, $
 					}
 				}
 			}).result.then(function success(selected) {
-				$scope.currentDocument.load(selected.volume, selected.doc.name);
-			}).finally(function() {
-				$scope.setFocus();
+				$scope.currentDocument.load(selected.volume, selected.doc.name).then(function success() {
+					$scope.settings.clearBackgroundImage();
+					$timeout(function () {
+						setFocus(CONTENT_ID);
+						setCaretToPos(CONTENT_ID, 0);
+						scrollTop(CONTENT_ID, 0);
+					});
+				});
 			});
 		}
 	};
 
 	$scope.saveDoc = function(name, autoSave) {
 		$scope.currentDocument.save($scope.currentVolume, name, autoSave);
-		$scope.setFocus();
+		setFocus(CONTENT_ID);
 	};
 
 	$scope.selectStorage = function() {
@@ -526,7 +564,7 @@ app.controller("SoloWriter", function($scope, $window, $log, $http, $interval, $
 		}).result.then(function success(selected) {
 			$scope.currentVolume = selected.volume;
 		}).finally(function() {
-			$scope.setFocus();
+			setFocus(CONTENT_ID);
 		});
 	};
 
@@ -547,7 +585,7 @@ app.controller("SoloWriter", function($scope, $window, $log, $http, $interval, $
 			$scope.settings.setAutoSaveFrequency(selected.frequency);
 			$scope.settings.setAutoSaveTempName(selected.tempName);
 		}).finally(function() {
-			$scope.setFocus();
+			setFocus(CONTENT_ID);
 		});
 	};
 
@@ -717,12 +755,20 @@ app.controller("UsersCtrl", function ($scope, $log, $uibModalInstance, Users, Us
 		});
 	};
 
+	$scope.isCurrentUser = function(user) {
+		if (angular.isDefined($scope.currentUser)) {
+			return $scope.currentUser.username == user.username;
+		}
+		return false;
+	};
+
 	$scope.loginUser = function(user) {
 		Password.challenge({
 			for: user.username
 		}).then(function success(response) {
 			$scope.loading = true;
 			user.login(response.password).then(function success() {
+				$log.info("logged in as " + user.username);
 				$uibModalInstance.close({ user: user });
 			}, function failure() {
 				MessageBox.error({
@@ -731,6 +777,15 @@ app.controller("UsersCtrl", function ($scope, $log, $uibModalInstance, Users, Us
 			}).finally(function() {
 				$scope.loading = false;
 			});
+		});
+	};
+
+	$scope.logoutUser = function(user) {
+		$scope.loading = true;
+		user.logout().then(function success() {
+			$uibModalInstance.close({ user: undefined });
+		}).finally(function() {
+			$scope.loading = false;
 		});
 	};
 
@@ -812,7 +867,7 @@ app.controller("UsersCtrl", function ($scope, $log, $uibModalInstance, Users, Us
 
 app.service("Password", function($uibModal) {
 	this.challenge = function(extra) {
-		if (!angular.isDefined(extra)) {
+		if (angular.isUndefined(extra)) {
 			extra = { };
 		}
 		return $uibModal.open({
@@ -882,7 +937,7 @@ app.controller("MessageBoxCtrl", function ($scope, $uibModalInstance, options) {
 app.filter("bytes", function() {
 	return function(bytes, precision) {
 		if (bytes == 0 || isNaN(parseFloat(bytes)) || !isFinite(bytes)) return "-";
-		if (!angular.isDefined(precision)) precision = 1;
+		if (angular.isUndefined(precision)) precision = 1;
 		var units = [ "B", "KB", "MB", "GB", "TB", "PB" ];
 		var number = Math.floor(Math.log(bytes) / Math.log(1024));
 		return (bytes / Math.pow(1024, Math.floor(number))).toFixed(precision) + " " + units[number];
