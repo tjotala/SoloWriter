@@ -17,7 +17,7 @@ class Token
 	SIGNING_KEY_LENGTH = 2048.freeze
 
 	@@digest = OpenSSL::Digest::SHA256.new
-	@@signing_key = OpenSSL::PKey::RSA.new(SIGNING_KEY_LENGTH)
+	@@signing_key = OpenSSL::PKey::RSA.new(SIGNING_KEY_LENGTH) # FIX: should persist this somewhere safe between restarts
 
 	def expired?
 		Time.now > @expires
