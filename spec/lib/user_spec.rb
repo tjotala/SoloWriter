@@ -27,9 +27,9 @@ describe User do
 			expect( user.id.to_s ).to be_a_uuid
 			expect( user.username.to_s ).to eq("thor")
 			expect( user.password ).not_to be_nil
-			expect( user.last_modified ).to be > now
-			expect( user.last_modified.utc? ).to be true
-			expect( user.last_login ).to be nil
+			expect( user.modified ).to be > now
+			expect( user.modified.utc? ).to be true
+			expect( user.loggedin ).to be nil
 		end
 
 		context "when changing username" do
@@ -37,10 +37,10 @@ describe User do
 				expect{ user.new_username("loki") }.to change{ user.username }
 			end
 
-			it "should change last_modified" do
+			it "should change modified" do
 				user.touch
 				delay
-				expect{ user.new_username("loki") }.to change{ user.last_modified }
+				expect{ user.new_username("loki") }.to change{ user.modified }
 			end
 
 			it "should not change id" do
@@ -51,8 +51,8 @@ describe User do
 				expect{ user.new_username("loki") }.not_to change{ user.password }
 			end
 
-			it "should not change last_login" do
-				expect{ user.new_username("loki") }.not_to change{ user.last_login }
+			it "should not change loggedin" do
+				expect{ user.new_username("loki") }.not_to change{ user.loggedin }
 			end
 		end
 
@@ -65,10 +65,10 @@ describe User do
 				expect{ user.new_password("hammer") }.to change{ user.password }
 			end
 
-			it "should change last_modified" do
+			it "should change modified" do
 				user.touch
 				delay
-				expect{ user.new_password("hammer") }.to change{ user.last_modified }
+				expect{ user.new_password("hammer") }.to change{ user.modified }
 			end
 
 			it "should not change id" do
@@ -79,8 +79,8 @@ describe User do
 				expect{ user.new_password("hammer") }.not_to change{ user.username }
 			end
 
-			it "should not change last_login" do
-				expect{ user.new_password("hammer") }.not_to change{ user.last_login }
+			it "should not change loggedin" do
+				expect{ user.new_password("hammer") }.not_to change{ user.loggedin }
 			end
 		end
 
@@ -91,7 +91,7 @@ describe User do
 
 		it "should encode to minimal public JSON" do
 			json = JSON.parse(user.to_json)
-			expect( json.keys ).to contain_exactly('id', 'username', 'last_modified', 'last_login')
+			expect( json.keys ).to contain_exactly('id', 'username', 'modified', 'loggedin')
 			expect( json['username'] ).to eq("thor")
 		end
 
@@ -144,9 +144,9 @@ describe User do
 		end
 
 		context "when generating new token" do
-			it "should only change last_login" do
+			it "should only change loggedin" do
 				delay
-				expect{ user.new_token }.to change{ user.last_login }
+				expect{ user.new_token }.to change{ user.loggedin }
 			end
 
 			it "should not change id" do
@@ -161,16 +161,16 @@ describe User do
 				expect{ user.new_token }.not_to change{ user.password }
 			end
 
-			it "should not change last_modified" do
+			it "should not change modified" do
 				user.touch
-				expect{ user.new_token }.not_to change{ user.last_modified }
+				expect{ user.new_token }.not_to change{ user.modified }
 			end
 		end
 
 		it "should timestamp last modification" do
 			user.touch
 			delay
-			expect{ user.touch }.to change { user.last_modified }
+			expect{ user.touch }.to change { user.modified }
 		end
 
 		it "should save itself" do

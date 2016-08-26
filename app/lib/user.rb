@@ -13,8 +13,8 @@ class User
 	attr_reader :id
 	attr_reader :username
 	attr_reader :password
-	attr_reader :last_modified
-	attr_reader :last_login
+	attr_reader :modified
+	attr_reader :loggedin
 
 	def password?(password)
 		@password.match?(password)
@@ -33,7 +33,7 @@ class User
 	end
 
 	def new_token
-		@last_login = self.class.now
+		@loggedin = self.class.now
 		Token.create(@id).encode
 	end
 
@@ -56,8 +56,8 @@ class User
 		{
 			id: @id.to_s,
 			username: @username.to_s,
-			last_modified: @last_modified.nil? ? nil : @last_modified.iso8601,
-			last_login: @last_login.nil? ? nil : @last_login.iso8601,
+			modified: @modified.nil? ? nil : @modified.iso8601,
+			loggedin: @loggedin.nil? ? nil : @loggedin.iso8601,
 		}.to_json(args)
 	end
 
@@ -70,13 +70,13 @@ class User
 			id: @id.to_s,
 			username: @username.encode,
 			password: @password.encode,
-			last_modified: @last_modified.nil? ? nil : @last_modified.iso8601,
-			last_login: @last_login.nil? ? nil : @last_login.iso8601
+			modified: @modified.nil? ? nil : @modified.iso8601,
+			loggedin: @loggedin.nil? ? nil : @loggedin.iso8601
 		})
 	end
 
 	def touch
-		@last_modified = self.class.now
+		@modified = self.class.now
 	end
 
 	def path
@@ -98,8 +98,8 @@ class User
 				user[:id],
 				Username.decode(user[:username]),
 				Password.decode(user[:password]),
-				user[:last_modified].nil? ? nil : Time.parse(user[:last_modified]),
-				user[:last_login].nil? ? nil : Time.parse(user[:last_login])
+				user[:modified].nil? ? nil : Time.parse(user[:modified]),
+				user[:loggedin].nil? ? nil : Time.parse(user[:loggedin])
 			)
 		rescue JSON::ParserError
 			invalid_argument("user record", "corrupted")
@@ -154,11 +154,11 @@ class User
 
 	private
 
-	def initialize(id, username, password, last_modified, last_login)
+	def initialize(id, username, password, modified, loggedin)
 		@id = id
 		@username = username
 		@password = password
-		@last_modified = last_modified
-		@last_login = last_login
+		@modified = modified
+		@loggedin = loggedin
 	end
 end
