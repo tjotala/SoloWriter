@@ -47,6 +47,7 @@ class SoloServer < Sinatra::Base
 	end
 
 	error AuthenticationError do
+		clear_token
 		halt 401, { error: env['sinatra.error'].message }.to_json
 	end
 
@@ -71,26 +72,34 @@ class SoloServer < Sinatra::Base
 	end
 
 	helpers do
-		def volume_from_id(volume_id)
-			settings.volumes.by_id(volume_id)
+		def volume_from_id(id)
+			settings.volumes.from_id(id)
 		end
 
-		def set_token(username, password)
-			session[:token] = settings.users.new_token(username, password).encode
+		def has_token?
+			!session[:token].nil?
+		end
+
+		def get_token
+			session[:token]
+		end
+
+		def set_token(token)
+			session[:token] = token
 		end
 
 		def clear_token
-			session[:token] = nil
+			session.clear
 		end
 
 		def user_from_token
-			user = session[:token].nil? ? nil : settings.users.from_token(session[:token])
-			logger.info("user from token: #{user}")
+			user = has_token? ? settings.users.from_token(get_token) : nil
+			logger.info("user from token: #{user.to_s}")
 			user
 		end
 
-		def documents(volume_id)
-			doc = Documents.new(volume_from_id(volume_id), user_from_token)
+		def documents(volume_id, user_id = nil)
+			doc = Documents.new(volume_from_id(volume_id), user_id || user_from_token)
 			logger.info("document folder: #{doc.path}")
 			doc
 		end
@@ -172,12 +181,13 @@ class SoloServer < Sinatra::Base
 	# @method POST
 	# @body username
 	# @body password
-	# @return 204
+	# @return 200 user
 	# @return 403 if password does not match user
 	#
 	post '/api/login' do
-		set_token(@request_json[:username], @request_json[:password])
-		status 204
+		user = settings.users.from_name(@request_json[:username], @request_json[:password])
+		set_token(user.new_token.encode)
+		json user
 	end
 
 	##
@@ -196,10 +206,10 @@ class SoloServer < Sinatra::Base
 	#
 	# @method GET
 	# @return 200 with user record
-	# @return 403 if password does not match user
+	# @return 401 if password does not match user
 	#
 	get '/api/whoami' do
-		user = user_from_token()
+		user = user_from_token
 		unauthorized if user.nil?
 		json user
 	end

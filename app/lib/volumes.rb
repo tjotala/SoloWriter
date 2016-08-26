@@ -12,7 +12,7 @@ class Volumes
 		id.to_s == LocalVolume::ID
 	end
 
-	def by_id(id)
+	def from_id(id)
 		vol = list.find { |vol| vol.id == id }
 		vol or no_such_resource("unknown volume #{id}")
 	end
