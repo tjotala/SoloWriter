@@ -5,16 +5,14 @@ class RemovableVolume < Volume
 		self.class.run("sudo mkdir -p /media/usb")
 		self.class.run("sudo chown -R pi:pi /media/usb")
 		self.class.run("sudo mount -o uid=pi,gid=pi,rw,noatime,nodiratime,noexec,sync,dirsync,flush UUID=#{@id} /media/usb")
-		true
+		self.class.get(@id)
 	end
 
 	def unmount
 		self.class.run("sudo umount UUID=#{@id}")
 		self.class.run("sudo rmdir /media/usb")
-		true
+		self.class.get(@id)
 	end
-
-	private
 
 	class << self
 		def run(cmd)

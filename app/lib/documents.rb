@@ -15,7 +15,7 @@ class Documents
 	end
 
 	def path
-		p = File.join(@volume.path, @user.username.to_s)
+		p = File.join(@volume.path, @user.id)
 		FileUtils.mkdir_p(p)
 		p
 	end
@@ -23,7 +23,7 @@ class Documents
 	private
 
 	class GlobalUser
-		def username
+		def id
 			''
 		end
 	end

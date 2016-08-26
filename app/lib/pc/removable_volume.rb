@@ -1,6 +1,16 @@
-require 'win32ole'
+require 'errors'
 
 class RemovableVolume < Volume
+	require 'win32ole'
+
+	def mount
+		not_implemented
+	end
+
+	def unmount
+		not_implemented
+	end
+
 	class << self
 		def parse(drive)
 			path = drive.Path.to_s

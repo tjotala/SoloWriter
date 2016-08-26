@@ -18,12 +18,14 @@ class Volumes
 	end
 
 	def mount(volume)
-		return list if volume.mount
+		volume.mount
+	rescue ConflictedResourceError
 		conflicted_resource("failed to mount volume #{volume.id}")
 	end
 
 	def unmount(volume)
-		return list if volume.unmount
+		volume.unmount
+	rescue ConflictedResourceError
 		conflicted_resource("failed to unmount volume #{volume.id}")
 	end
 end
