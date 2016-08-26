@@ -5,6 +5,8 @@ require 'users'
 require 'volumes'
 require 'networks'
 require 'documents'
+require 'username'
+require 'password'
 
 class SoloServer < Sinatra::Base
 	configure do
@@ -107,12 +109,34 @@ class SoloServer < Sinatra::Base
 		def bad_request(msg)
 			halt 400, { error: msg }.to_json
 		end
+
+		def config
+			{
+				platform: %x[uname -a].chomp.strip,
+				environment: settings.environment,
+				time: Time.now.utc.iso8601,
+				zone: Time.now.zone,
+				offset: Time.now.utc_offset / 60,
+				valid_username: Username::PATTERN.source,
+				valid_password: Password::PATTERN.source,
+			}
+		end
 	end
 
 	get '/' do
 		cache_control :public, :max_age => 60
 		content_type :html
 		send_file(File.join(settings.public_folder, 'index.html'))
+	end
+
+	##
+	# Get Configuration
+	#
+	# @method GET
+	# @return 200 configuration items
+	#
+	get '/api/config' do
+		json config
 	end
 
 	##
