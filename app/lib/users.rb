@@ -18,8 +18,7 @@ class Users
 		user
 	end
 
-	def new_token(id, password)
-		user = from_id(id, password)
+	def new_token(user)
 		token = user.new_token
 		user.save
 		token
