@@ -2,10 +2,12 @@ require 'spec_helper'
 require 'token'
 
 describe Token do
+	let(:uuid) { SecureRandom.uuid }
 	it "should create new valid token" do
-		token = Token.create("thor")
+		token = Token.create(uuid)
 		expect( token ).to be_a(Token)
-		expect( token.username ).to eq("thor")
+		expect( token.id ).to be_a_uuid
+		expect( token.id ).to eq(uuid)
 		expect( token.created.utc? ).to be true
 		expect( token.created.subsec ).to be == 0
 		expect( token.created ).to be <= Time.now.round(0)
@@ -16,7 +18,7 @@ describe Token do
 	end
 
 	it "should encode and decode" do
-		token = Token.create("thor")
+		token = Token.create(uuid)
 		decoded = Token.decode(token.encode)
 		expect( token ).to eq(decoded)
 	end

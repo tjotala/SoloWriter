@@ -126,53 +126,51 @@ class SoloServer < Sinatra::Base
 	end
 
 	##
-	# Add User
+	# Create User
 	#
-	# @method PUT
-	# @param username
+	# @method POST
+	# @body username
 	# @body password
-	# @return 200 list of users
+	# @return 200 new user
 	# @return 403 if user already exists
 	#
-	put '/api/users/:username' do
-		settings.users.create(params[:username], @request_json[:password])
-		json settings.users.list
+	post '/api/users/?' do
+		json settings.users.create(@request_json[:username], @request_json[:password])
 	end
 
 	##
 	# Delete User
 	#
 	# @method DELETE
-	# @param username
+	# @param user_id
 	# @body password
-	# @return 200 list of users
+	# @return 204
 	# @return 403 if password does not match user
 	#
-	delete '/api/users/:username' do
-		settings.users.delete(params[:username], @request_json[:password])
-		json settings.users.list
+	delete '/api/users/:id' do
+		settings.users.delete(params[:id], @request_json[:password])
+		status 204
 	end
 
 	##
 	# Change User Name or Password
 	#
 	# @method POST
-	# @param username
+	# @param user ID
 	# @body password
 	# @body new_password
 	# @body new_username
-	# @return 200 list of users
+	# @return 200 updated user
 	# @return 403 if password does not match user
 	#
-	post '/api/users/:username' do
+	post '/api/users/:id' do
 		if @request_json[:new_username]
-			settings.users.update_username(params[:username], @request_json[:password], @request_json[:new_username])
+			json settings.users.update_username(params[:id], @request_json[:password], @request_json[:new_username])
 		elsif @request_json[:new_password]
-			settings.users.update_password(params[:username], @request_json[:password], @request_json[:new_password])
+			json settings.users.update_password(params[:id], @request_json[:password], @request_json[:new_password])
 		else
 			bad_request("nothing to change")
 		end
-		json settings.users.list
 	end
 
 	##

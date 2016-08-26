@@ -8,7 +8,7 @@ require 'errors'
 
 class Token
 	include Comparable
-	attr_reader :username
+	attr_reader :id
 	attr_reader :created
 	attr_reader :expires
 
@@ -24,7 +24,7 @@ class Token
 	end
 
 	def encode
-		json_token = JSON.generate({ username: @username, created: @created.iso8601, expires: @expires.iso8601 })
+		json_token = JSON.generate({ id: @id, created: @created.iso8601, expires: @expires.iso8601 })
 		signature = Base64::urlsafe_encode64(@@signing_key.sign(@@digest, json_token))
 		json_envelope = JSON.generate({ signature: signature, token: json_token })
 		compressed = Zlib::Deflate.deflate(json_envelope)
@@ -32,12 +32,12 @@ class Token
 	end
 
 	def <=>(other)
-		self.username <=> other.username && self.created <=> other.created && self.expires <=> other.expires
+		self.id <=> other.id && self.created <=> other.created && self.expires <=> other.expires
 	end
 
 	class << self
-		def create(username)
-			self.new(username, nil, nil)
+		def create(id)
+			self.new(id, nil, nil)
 		end
 
 		def decode(encoded)
@@ -46,7 +46,7 @@ class Token
 			envelope = JSON.parse(decompressed, :symbolize_names => true)
 			invalid_token unless @@signing_key.verify(@@digest, Base64::urlsafe_decode64(envelope[:signature]), envelope[:token])
 			token = JSON.parse(envelope[:token], :symbolize_names => true)
-			self.new(token[:username], Time.parse(token[:created]), Time.parse(token[:expires]))
+			self.new(token[:id], Time.parse(token[:created]), Time.parse(token[:expires]))
 		rescue ArgumentError
 			invalid_token
 		rescue Zlib::DataError
@@ -56,8 +56,8 @@ class Token
 
 	private
 
-	def initialize(username, created, expires)
-		@username = username
+	def initialize(id, created, expires)
+		@id = id
 		@created = (created || Time.now).utc.round(0)
 		@expires = (expires || (@created + LIFETIME)).utc.round(0)
 	end

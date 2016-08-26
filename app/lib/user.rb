@@ -1,6 +1,7 @@
 require 'openssl'
 require 'base64'
 require 'json'
+require 'securerandom'
 
 require 'errors'
 require 'username'
@@ -9,6 +10,7 @@ require 'token'
 
 class User
 	include Comparable
+	attr_reader :id
 	attr_reader :username
 	attr_reader :password
 	attr_reader :last_modified
@@ -32,7 +34,7 @@ class User
 
 	def new_token
 		@last_login = self.class.now
-		Token.create(@username.to_s).encode
+		Token.create(@id).encode
 	end
 
 	def save
@@ -52,6 +54,7 @@ class User
 
 	def to_json(*args)
 		{
+			id: @id.to_s,
 			username: @username.to_s,
 			last_modified: @last_modified.nil? ? nil : @last_modified.iso8601,
 			last_login: @last_login.nil? ? nil : @last_login.iso8601,
@@ -59,11 +62,12 @@ class User
 	end
 
 	def <=>(other)
-		self.username <=> other.username && self.password <=> other.password
+		self.id <=> other.id && self.username <=> other.username && self.password <=> other.password
 	end
 
 	def encode
 		JSON.generate({
+			id: @id.to_s,
 			username: @username.encode,
 			password: @password.encode,
 			last_modified: @last_modified.nil? ? nil : @last_modified.iso8601,
@@ -75,27 +79,30 @@ class User
 		@last_modified = self.class.now
 	end
 
-	def to_s
-		@username.to_s
+	def path
+		self.class.path(@id)
 	end
 
-	def path
-		self.class.path(@username)
+	def to_s
+		"#{@id} (#{@username})"
 	end
 
 	class << self
 		def create(username, password)
-			self.new(Username.create(username), Password.create(password), now, nil)
+			self.new(SecureRandom.uuid, Username.create(username), Password.create(password), now, nil)
 		end
 
 		def decode(encoded)
 			user = JSON.parse(encoded, :symbolize_names => true)
 			self.new(
+				user[:id],
 				Username.decode(user[:username]),
 				Password.decode(user[:password]),
 				user[:last_modified].nil? ? nil : Time.parse(user[:last_modified]),
 				user[:last_login].nil? ? nil : Time.parse(user[:last_login])
 			)
+		rescue JSON::ParserError
+			invalid_argument("user record", "corrupted")
 		end
 
 		def from_json(json)
@@ -106,23 +113,38 @@ class User
 			json = File.open(path, 'r') { |f| f.read }
 			from_json(json)
 		rescue Errno::ENOENT
-			no_such_resource("user")
+			no_such_resource("user: #{path}")
 		end
 
-		def from_name(username)
-			from_path(path(username))
+		def from_id(id)
+			from_path(path(id))
 		end
 
 		def from_token(token)
-			from_name(Token.decode(token).username)
+			from_id(Token.decode(token).id)
+		end
+
+		def from_name(username)
+			Dir[User.path('*')].each do |p|
+				user = from_path(p)
+				return user if user.username.to_s == username.to_s
+			end
+			no_such_resource("user")
 		end
 
 		def exist?(username)
-			File.exist?(path(username))
+			from_name(username)
+			true
+		rescue NoSuchResourceError => e
+			false
 		end
 
-		def path(username)
-			File.join(Platform::USERS_PATH, username.to_s)
+		def path(id)
+			File.join(Platform::USERS_PATH, id)
+		end
+
+		def list
+			Dir[User.path('*')].map { |path| self.from_path(path) }
 		end
 
 		def now
@@ -132,7 +154,8 @@ class User
 
 	private
 
-	def initialize(username, password, last_modified, last_login)
+	def initialize(id, username, password, last_modified, last_login)
+		@id = id
 		@username = username
 		@password = password
 		@last_modified = last_modified

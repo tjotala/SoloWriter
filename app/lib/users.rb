@@ -1,21 +1,25 @@
-require 'promise'
-
 require 'errors'
 require 'user'
 
 class Users
 	def list
-		Dir[User.path('*')].map { |path| User.from_path(path) }
+		User.list
 	end
 
-	def validate(username, password)
+	def from_id(id, password)
+		user = User.from_id(id)
+		unauthorized unless user.password?(password)
+		user
+	end
+
+	def from_name(username, password)
 		user = User.from_name(username)
 		unauthorized unless user.password?(password)
 		user
 	end
 
-	def new_token(username, password)
-		user = validate(username, password)
+	def new_token(id, password)
+		user = from_id(id, password)
 		token = user.new_token
 		user.save
 		token
@@ -30,20 +34,19 @@ class Users
 		User.create(username, password).save
 	end
 
-	def update_username(username, password, new_username)
-		user = validate(username, password)
-		user.delete
-		create(new_username, password)
+	def update_username(id, password, new_username)
+		user = from_id(id, password)
+		user.new_username(new_username).save
 	end
 
-	def update_password(username, password, new_password)
-		user = validate(username, password)
+	def update_password(id, password, new_password)
+		user = from_id(id, password)
 		forbidden if user.password?(new_password) # new_password == old_password
 		user.new_password(new_password).save
 	end
 
-	def delete(username, password)
-		user = validate(username, password)
+	def delete(id, password)
+		user = from_id(id, password)
 		user.delete
 	end
 end
