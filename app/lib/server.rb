@@ -164,13 +164,14 @@ class SoloServer < Sinatra::Base
 	# @return 403 if password does not match user
 	#
 	post '/api/users/:id' do
-		if @request_json[:new_username]
-			json settings.users.update_username(params[:id], @request_json[:password], @request_json[:new_username])
+		user = if @request_json[:new_username]
+			settings.users.update_username(params[:id], @request_json[:password], @request_json[:new_username])
 		elsif @request_json[:new_password]
-			json settings.users.update_password(params[:id], @request_json[:password], @request_json[:new_password])
+			settings.users.update_password(params[:id], @request_json[:password], @request_json[:new_password])
 		else
 			bad_request("nothing to change")
 		end
+		json user
 	end
 
 	##
@@ -178,12 +179,20 @@ class SoloServer < Sinatra::Base
 	#
 	# @method POST
 	# @body username
+	# @body id
 	# @body password
 	# @return 200 user
 	# @return 403 if password does not match user
+	# @notes Either username or ID must be supplied. If both are given, prefer ID.
 	#
 	post '/api/login' do
-		user = settings.users.from_name(@request_json[:username], @request_json[:password])
+		user = if @request_json[:id]
+			settings.users.from_id(@request_json[:id], @request_json[:password])
+		elsif @request_json[:username]
+			settings.users.from_name(@request_json[:username], @request_json[:password])
+		else
+			invalid_argument(:id, "either id or username must be included")
+		end
 		set_token(user.new_token.encode)
 		json user
 	end
