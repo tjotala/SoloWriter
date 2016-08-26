@@ -343,11 +343,10 @@ class SoloServer < Sinatra::Base
 	# @param volume_id storage volume
 	# @param filename
 	# @body document content
-	# @return 204 ok
+	# @return 200 updated file record
 	#
 	put '/api/volumes/:volume_id/files/:filename' do
-		documents(params[:volume_id]).get(params[:filename]).create(request.body.read)
-		status 204
+		json documents(params[:volume_id]).get(params[:filename]).create(request.body.read)
 	end
 
 	##
@@ -361,6 +360,30 @@ class SoloServer < Sinatra::Base
 	delete '/api/volumes/:volume_id/files/:filename' do
 		documents(params[:volume_id]).get(params[:filename]).remove
 		status 204
+	end
+
+	##
+	# Lock Document
+	#
+	# @method PUT
+	# @param volume_id storage volume
+	# @param filename
+	# @return 200 updated file record
+	#
+	put '/api/volumes/:volume_id/files/:filename/lock' do
+		json documents(params[:volume_id]).get(params[:filename]).lock
+	end
+
+	##
+	# Unlock Document
+	#
+	# @method PUT
+	# @param volume_id storage volume
+	# @param filename
+	# @return 200 updated file record
+	#
+	put '/api/volumes/:volume_id/files/:filename/unlock' do
+		json documents(params[:volume_id]).get(params[:filename]).unlock
 	end
 
 	##
