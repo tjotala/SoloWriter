@@ -193,7 +193,7 @@ class SoloServer < Sinatra::Base
 		else
 			invalid_argument(:id, "either id or username must be included")
 		end
-		set_token(user.new_token.encode)
+		set_token(settings.users.new_token(user).encode)
 		json user
 	end
 
