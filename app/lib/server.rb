@@ -119,6 +119,7 @@ class SoloServer < Sinatra::Base
 				offset: Time.now.utc_offset / 60,
 				valid_username: Username::PATTERN.source,
 				valid_password: Password::PATTERN.source,
+				local_volume_id: LocalVolume::ID,
 			}
 		end
 	end
