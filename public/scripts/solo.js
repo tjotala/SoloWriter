@@ -927,18 +927,20 @@ app.controller("SaveDocCtrl", function ($scope, $uibModalInstance, $log, Users, 
 	};
 });
 
-app.controller("StorageCtrl", function ($scope, $uibModalInstance, $log, $timeout, Volumes, MessageBox) {
+app.controller("StorageCtrl", function ($scope, $uibModalInstance, $log, Volumes, MessageBox) {
 	$scope.volumes = undefined;
-	$scope.loading = true;
+	$scope.loading = false;
 
-	Volumes.getList().then(function success(list) {
-		$scope.volumes = list;
-	}).finally(function() {
-		$scope.loading = false;
-	});
+	function refresh() {
+		$scope.lodaing = true;
+		Volumes.getList().then(function success(list) {
+			$scope.volumes = list;
+		}).finally(function() {
+			$scope.loading = false;
+		});
+	}
 
 	$scope.isOperatingOn = function(volume) {
-		// $log.info("operating on: " + volume.id + ": " + ($scope.loading === volume.id));
 		return $scope.loading === volume.id;
 	};
 
@@ -947,15 +949,11 @@ app.controller("StorageCtrl", function ($scope, $uibModalInstance, $log, $timeou
 	};
 
 	$scope.isMountable = function(volume) {
-		var v = !volume.mounted && volume.can_mount && !$scope.isOperatingOn(volume);
-		$log.info("isMountable(" + volume.id + "): " + v);
-		return v;
+		return !volume.mounted && volume.can_mount && !$scope.isOperatingOn(volume);
 	};
 
 	$scope.isUnmountable = function(volume) {
-		var v = volume.mounted && volume.can_unmount && !$scope.isOperatingOn(volume);
-		$log.info("isUnmountable(" + volume.id + "): " + v);
-		return v;
+		return volume.mounted && volume.can_unmount && !$scope.isOperatingOn(volume);
 	};
 
 	$scope.isSelectable = function(volume) {
@@ -969,10 +967,10 @@ app.controller("StorageCtrl", function ($scope, $uibModalInstance, $log, $timeou
 	$scope.mount = function(volume) {
 		$scope.loading = volume.id;
 		Volumes.mount(volume).then(function success(vol) {
-			volume = vol;
+			volume.setData(vol);
 		}, function failure() {
 			MessageBox.error({
-				message: "Failed to connect [" + volume.name + "]"
+				message: "Failed to connect [" + volume.label + "]"
 			});
 		}).finally(function() {
 			$scope.loading = false;
@@ -981,17 +979,21 @@ app.controller("StorageCtrl", function ($scope, $uibModalInstance, $log, $timeou
 
 	$scope.unmount = function(volume) {
 		$scope.loading = volume.id;
-		$timeout(angular.noop);
 		Volumes.unmount(volume).then(function success(vol) {
-			volume = vol;
+			volume.setData(vol);
+			MessageBox.success({
+				message: "It is now safe to remove [" + volume.label + "]"
+			});
 		}, function failure() {
 			MessageBox.error({
-				message: "Failed to disconnect [" + volume.name + "]"
+				message: "Failed to disconnect [" + volume.label + "]"
 			});
 		}).finally(function() {
 			$scope.loading = false;
 		});
 	};
+
+	refresh();
 });
 
 app.controller("SettingsCtrl", function ($scope, $uibModalInstance, $log, Settings, Volumes) {
@@ -1207,13 +1209,19 @@ app.controller("PasswordCtrl", function ($scope, $uibModalInstance, $timeout, ex
 
 app.service("MessageBox", function($uibModal) {
 	this.confirm = function(options) {
-		options.title || (options.title = "Confirm");
+		options.title || (options.title = "Confirm?");
 		options.message || (options.message = "Unsaved modifications in document [" + options.name + "] will be lost. Are you sure?");
 		return this.prompt(options);
 	};
 
 	this.error = function(options) {
-		options.title || (options.title = "Error");
+		options.title || (options.title = "Error!");
+		options.ok_only = true;
+		return this.prompt(options);
+	};
+
+	this.success = function(options) {
+		options.title || (options.title = "Success!");
 		options.ok_only = true;
 		return this.prompt(options);
 	};
@@ -1223,6 +1231,7 @@ app.service("MessageBox", function($uibModal) {
 			animation: false,
 			templateUrl: "messagebox.html",
 			controller: "MessageBoxCtrl",
+			size: "sm",
 			resolve: {
 				options: function() {
 					return options;
