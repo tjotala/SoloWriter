@@ -3,6 +3,7 @@ require 'errors'
 class RemovableVolume < Volume
 	require 'win32ole'
 
+=begin # we don't do mount/unmount on Windows
 	def mount
 		not_implemented
 	end
@@ -10,6 +11,7 @@ class RemovableVolume < Volume
 	def unmount
 		not_implemented
 	end
+=end
 
 	class << self
 		def parse(drive)
