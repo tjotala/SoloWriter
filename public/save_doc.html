@@ -1,0 +1,14 @@
+<div class="modal-header bg-primary">
+	<h4 class="modal-title pull-left">Save to <strong role="button">{{userGreeting()}}&nbsp;<i class="fa fa-lg fa-caret-down"></i></strong> Documents on <strong role="button" ng-click="selectStorage()">{{currentVolume.label}}&nbsp;<i class="fa fa-lg fa-caret-down"></i></strong></h4>
+	<i class="fa fa-2x fa-close pull-right" role="button" ng-click="$dismiss('cancel')"></i>
+</div>
+<div class="modal-body">
+	<form class="form-horizontal" ng-submit="ok()">
+		<div class="form-group">
+			<label for="name" class="col-sm-3 control-label">Name</label>
+			<div class="col-sm-9">
+				<input type="text" class="form-control" placeholder="Enter name" autofocus ng-minlength="3" ng-model="currentDocument.name" ng-enter="ok()"></input>
+			</div>
+		</div>
+	</form>
+</div>

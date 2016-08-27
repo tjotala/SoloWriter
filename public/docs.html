@@ -1,5 +1,5 @@
 <div class="modal-header bg-primary">
-	<h4 class="modal-title pull-left"><span ng-if="currentUser">{{currentUser.getName()}}'s</span><span ng-if="!currentUser">Shared</span> Documents on <strong role="button" ng-click="selectStorage()">{{currentVolume.label}}&nbsp;<i class="fa fa-lg fa-caret-down"></i></strong></h4>
+	<h4 class="modal-title pull-left"><strong role="button" ng-click="selectUser()">{{userGreeting()}}&nbsp;<i class="fa fa-lg fa-caret-down"></i></strong> Documents on <strong role="button" ng-click="selectStorage()">{{currentVolume.label}}&nbsp;<i class="fa fa-lg fa-caret-down"></i></strong></h4>
 	<i class="fa fa-2x fa-close pull-right" role="button" ng-click="$dismiss('cancel')"></i>
 </div>
 <div class="modal-body">
@@ -15,7 +15,7 @@
 		<tbody ng-switch="documents.length">
 			<tr ng-switch-default role="button" ng-repeat="doc in documents | orderBy: 'name'" ng-model="doc" ng-hide="doc.removed">
 				<td ng-click="selectDoc(doc)">{{doc.name}}</td>
-				<td ng-click="selectDoc(doc)">{{doc.modified | date: 'medium' }}</td>
+				<td ng-click="selectDoc(doc)">{{doc.modified | date: 'short' }}</td>
 				<td ng-click="selectDoc(doc)">{{doc.size | bytes}}</td>
 				<td><i class="fa fa-lg fa-trash" role="button" ng-click="deleteDoc(doc)" title="Delete"></i></td>
 			</tr>

@@ -12,22 +12,20 @@
 				<th>Location</th>
 				<th>Capacity</th>
 				<th>Available</th>
-				<th ng-if="isDevelopment()">ID</id>
 			</tr>
 		</thead>
 		<tbody>
 			<tr ng-repeat="volume in volumes">
 				<td>
-					<i ng-show="loading == volume.id" class="fa fa-lg fa-fw fa-spinner fa-spin"></i>
-					<i ng-show="loading != volume.id && volume.mounted" role="button" class="fa fa-lg fa-fw" title="Select" ng-class="isVolumeSelected(volume) ? 'fa-check-square-o' : 'fa-square-o'" ng-click="selectVolume(volume)"></i>
-					<i ng-show="loading != volume.id && volume.mounted && volume.can_unmount" role="button" class="fa fa-lg fa-fw fa-unlink" title="Disconnect" ng-click="unmountVolume(volume)"></i>
-					<i ng-show="loading != volume.id && !volume.mounted && volume.can_mount" role="button" class="fa fa-lg fa-fw fa-link" title="Connect" ng-click="mountVolume(volume)"></i>
+					<i ng-show="isOperatingOn(volume)" class="fa fa-lg fa-fw fa-spinner fa-spin"></i>
+					<i ng-show="isSelectable(volume)" role="button" class="fa fa-lg fa-fw" title="Select" ng-class="isCurrent(volume) ? 'fa-check-square-o' : 'fa-square-o'" ng-click="select(volume)"></i>
+					<i ng-show="isUnmountable(volume)" role="button" class="fa fa-lg fa-fw fa-unlink" title="Disconnect" ng-click="unmount(volume)"></i>
+					<i ng-show="isMountable(volume)" role="button" class="fa fa-lg fa-fw fa-link" title="Connect" ng-click="mount(volume)"></i>
 				</td>
 				<td><i class="fa fa-lg fa-fw" ng-class="volume.getIcon()"></i></td>
 				<td>{{volume.label}}</td>
 				<td>{{volume.total_space | bytes}}</td>
 				<td>{{volume.available_space | bytes}}</td>
-				<td ng-if="isDevelopment()">{{volume.id}}</td>
 			</tr>
 		</tbody>
 	</table>

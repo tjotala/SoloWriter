@@ -38,7 +38,6 @@ function now8601() {
 app.constant("CONTENT_ID", "content");
 app.constant("LOCAL_VOLUME_ID", "local");
 app.constant("DEFAULT_DOCUMENT_NAME", "NoName");
-app.constant("AUTOSAVE_FREQUENCY_NEVER", 0);
 
 app.config(function($logProvider, IdleProvider, KeepaliveProvider){
 	$logProvider.debugEnabled(false);
@@ -53,137 +52,297 @@ app.run(function(Idle){
 	Idle.watch();
 });
 
-app.factory("Settings", function($window, $interpolate, CONTENT_ID, DEFAULT_DOCUMENT_NAME) {
-	var defFontSize = parseFloat($window.getComputedStyle(getById(CONTENT_ID)).getPropertyValue("font-size"));
-	var minFontSize = 10; // px
-	var maxFontSize = 50; // px
-	var fontSize = defFontSize;
-	var fontFamily = $window.getComputedStyle(getById(CONTENT_ID)).getPropertyValue("font-family");
-	var backgroundImage = true;
-	var autoSave = {
-		frequency: 1, // minutes
-		tempName: {
-			use: true,
-			pattern: "{{name}}.autosave" // this is run through $interpolate(pattern)({ name: <filename> })
-		}
-	}
-	var mainMode = true; // true = main, false = settings
-	var devMode = true;  // true = development mode, false = not development mode
+function RangeOption(values) {
+	this.setData = function(other) {
+		angular.extend(this, other);
+		this.default = this.default || this.min;
+		this.current = this.current || this.default;
+		this.units = this.units || "msec";
+		return this;
+	};
 
-	var slideShowMode = false;
-	var slideShowInterval = 10000;
+	this.scaleTo = function(mul, div, units) {
+		var old_units = this.units;
+		var copy = angular.copy(this);
+		copy.units = units;
+		for(var key in copy) {
+			if (copy.hasOwnProperty(key) && angular.isNumber(copy[key])) {
+				copy[key] = copy[key] * mul / div;
+			}
+		}
+		copy.restore = function() { return copy.scaleTo(div, mul, old_units); };
+		return copy;
+	};
+
+	// for unscaled values, this is no-op
+	this.restore = function() { return angular.copy(this); }
+
+	// these assume the source is msec
+	this.asMs = function() {
+		return angular.copy(this);
+	};
+	this.asSec = function() {
+		return this.scaleTo(1, 1000, "sec");
+	};
+	this.asMin = function() {
+		return this.scaleTo(1, 60 * 1000, "min");
+	};
+
+	this.setData(values);
+	return this;
+}
+
+app.factory("Settings", function($window, $interpolate, $uibModal, CONTENT_ID, DEFAULT_DOCUMENT_NAME) {
+
+	var textSize = new RangeOption({
+		enabled: true,
+		min: 10, // px
+		max: 50, // px
+		step: 10, // px
+		units: "px",
+		default: parseFloat($window.getComputedStyle(getById(CONTENT_ID)).getPropertyValue("font-size")),
+		asStyle: function() { return { 'font-size': this.current + this.units, 'font-family': this.font }; },
+		font: $window.getComputedStyle(getById(CONTENT_ID)).getPropertyValue("font-family"),
+		setFrom: function(other) { this.enabled = other.enabled; this.current = other.current; }
+	});
+
+	var autoSaveTime = new RangeOption({
+		enabled: true,
+		min: 0.5 * 60 * 1000, // ms
+		max: 5 * 60 * 1000, // ms
+		step: 0.5 * 60 * 1000, // ms
+		default: 1 * 60 * 1000, // ms
+		setFrom: function(other) {this.enabled = other.enabled; this.current = other.current; }
+	});
+	var autoSaveName = {
+		enabled: true,
+		pattern: "{{name}}.autosave", // this is run through $interpolate(pattern)({ name: <filename> })
+		name: function(fill) { return $interpolate(this.pattern)({ name: angular.isDefined(fill) ? fill : DEFAULT_DOCUMENT_NAME}); },
+		setFrom: function(other) { this.enabled = other.enabled; }
+	};
+
+	var lockScreenTime = new RangeOption({
+		enabled: true,
+		min: 1 * 60 * 1000, // ms
+		max: 10 * 60 * 1000, // ms
+		step: 1 * 60 * 1000, // ms
+		default: 1 * 60 * 1000, // ms
+		setFrom: function(other) { this.enabled = other.enabled; this.current = other.current; }
+	});
+	var lockScreenInterval = new RangeOption({
+		enabled: true,
+		min: 10 * 1000, // ms
+		max: 60 * 1000, // ms
+		step: 5 * 1000, // ms
+		default: 10 * 1000, // ms
+		setFrom: function(other) { this.enabled = other.enabled; this.current = other.current; }
+	});
+
+	var backgroundImage = true;
+	var devMode = true;  // true = development mode, false = not development mode
 
 	return {
 		isDevelopment: function() {
 			return devMode;
 		},
-
 		toggleDevelopment: function() {
 			devMode = !devMode;
 		},
 
-		enterSettings: function() {
-			mainMode = false;
+		setBackgroundImage: function(val) {
+			backgroundImage = val;
 		},
-
-		exitSettings: function() {
-			mainMode = true;
-		},
-
-		isSettingsMode: function() {
-			return !mainMode;
-		},
-
-		enterSlideShow: function() {
-			slideShowMode = true;
-		},
-
-		exitSlideShow: function() {
-			slideShowMode = false;
-		},
-
-		isSlideShowMode: function() {
-			return slideShowMode;
-		},
-
-		getSlideShowInterval: function() {
-			return slideShowInterval;
-		},
-
-		getTextSize: function() {
-			return fontSize + "px";
-		},
-
-		setTextSize: function(delta) {
-			if (delta == 0 || angular.isDefined(delta)) {
-				fontSize = defFontSize;
-			} else {
-				fontSize = Math.min(Math.max(Math.round(fontSize + delta), minFontSize), maxFontSize);
-			}
-		},
-
-		setBackgroundImage: function() {
-			backgroundImage = true;
-		},
-
-		clearBackgroundImage: function() {
-			backgroundImage = false;
-		},
-
-		toggleBackgroundImage: function() {
-			backgroundImage = !backgroundImage;
-		},
-
-		hasBackgroundImage: function() {
+		getBackgroundImage: function() {
 			return backgroundImage;
 		},
 
-		getAutoSaveFrequency: function() {
-			return autoSave.frequency;
+		getTextSize: function() {
+			return textSize;
+		},
+		setTextSize: function(other) {
+			textSize.setFrom(other);
 		},
 
-		getAutoSaveFrequencyAsMs: function() {
-			return autoSave.frequency * 60 * 1000;
+		getAutoSaveTime: function() {
+			return autoSaveTime;
+		},
+		setAutoSaveTime: function(other) {
+			autoSaveTime.setFrom(other);
 		},
 
-		setAutoSaveFrequency: function(freq) {
-			autoSave.frequency = freq;
+		getAutoSaveName: function() {
+			return autoSaveName;
+		},
+		setAutoSaveName: function(other) {
+			autoSaveName.setFrom(other);
 		},
 
-		getAutoSaveTempName: function(name) {
-			return {
-				use: autoSave.tempName.use,
-				pattern: autoSave.tempName.pattern,
-				name: $interpolate(autoSave.tempName.pattern)({ name: angular.isDefined(name) ? name : DEFAULT_DOCUMENT_NAME})
-			};
+		getLockScreenTime: function() {
+			return lockScreenTime;
+		},
+		setLockScreenTime: function(other) {
+			lockScreenTime.setFrom(other);
 		},
 
-		setAutoSaveTempName: function(useTemp, pattern) {
-			autoSave.tempName.use = useTemp;
-			if (angular.isDefined(pattern)) {
-				autoSave.tempName.pattern = pattern;
-			}
+		getLockScreenInterval: function() {
+			return lockScreenInterval;
+		},
+		setLockScreenInterval: function(other) {
+			lockScreenInterval.setFrom(other);
+		},
+
+		select: function() {
+			var self = this;
+			return $uibModal.open({
+				animation: false,
+				templateUrl: "settings.html",
+				controller: "SettingsCtrl",
+				size: "lg"
+			}).result.then(function success(settings) {
+				self.setTextSize(settings.textSize);
+				self.setAutoSaveTime(settings.autoSaveTime);
+				self.setAutoSaveName(settings.autoSaveName);
+				self.setLockScreenTime(settings.lockScreenTime);
+				self.setLockScreenInterval(settings.lockScreenInterval);
+				self.setBackgroundImage(settings.backgroundImage);
+			});
+		}
+	};
+});
+
+app.factory("User", function($http) {
+	return function(user) {
+		this.setData = function(user) {
+			angular.extend(this, user);
+			return this;
+		};
+
+		this.load = function(id) {
+			var self = this;
+			return $http.get("/api/users/" + id).then(function success(response) {
+				return self.setData(response.data);
+			});
+		};
+
+		this.remove = function(password) {
+			var body = { password: password };
+			var hdrs = { "Content-Type": "application/json" };
+			return $http.delete("/api/users/" + this.id, { data: body, headers: hdrs });
+		};
+
+		this.changeUsername = function(old_password, new_username) {
+			var body = { password: old_password, new_username: new_username };
+			return $http.post("/api/users/" + this.id, body).then(function success(response) {
+				self.setData(response.data);
+			});
+		};
+
+		this.changePassword = function(old_password, new_password) {
+			var body = { password: old_password, new_password: new_password };
+			return $http.post("api/users/" + this.id, body).then(function success(response) {
+				self.setData(response.data);
+			});
+		};
+
+		this.setData(user);
+	};
+});
+
+app.factory("Users", function($http, $log, $uibModal, User) {
+	var currentUser = undefined;
+
+	function parseList(response) {
+		return response.map(function(u, i, a) {
+			return new User(u);
+		});
+	}
+
+	function whoami() {
+		return $http.get("/api/whoami").then(function success(response) {
+			return new User(response.data);
+		});
+	}
+
+	whoami().then(function success(me) {
+		currentUser = me;
+	});
+
+	return {
+		getList: function() {
+			return $http.get("/api/users").then(function success(response) {
+				return parseList(response.data);
+			});
+		},
+
+		isLoggedIn: function() {
+			return angular.isDefined(currentUser);
+		},
+
+		login: function(username, password) {
+			var body = { username: username, password: password };
+			return $http.post("/api/login", body).then(function succeed(response) {
+				currentUser = new User(response.data);
+				return currentUser;
+			});
+		},
+
+		logout: function() {
+			currentUser = undefined;
+			return $http.post("/api/logout"); // we don't really care whether that succeeded or not
+		},
+
+		isCurrent: function(user) {
+			return this.isLoggedIn() && currentUser.username === user.username;
+		},
+
+		getCurrent: function() {
+			return currentUser;
+		},
+
+		create: function(username, password) {
+			var self = this;
+			var body = { username: username, password: password };
+			return $http.post("/api/users", body).then(function success(response) {
+				return new User(response.data);
+			});
+		},
+
+		select: function() {
+			var self = this;
+			return $uibModal.open({
+				animation: false,
+				templateUrl: "users.html",
+				controller: "UsersCtrl",
+				size: "lg"
+			}).result.then(function success(user) {
+				if (angular.isDefined(user)) {
+					$log.info("setting currentUser to " + user.username);
+					currentUser = user; // logged in
+				} else {
+					currentUser = undefined; // logged out
+				}
+			});
 		}
 	};
 });
 
 app.factory("Volume", function($http, LOCAL_VOLUME_ID) {
 	return function(volume) {
-		this.setData = function(volume) {
-			if (angular.isDefined(volume)) {
-				angular.extend(this, volume);
+		this.setData = function(vol) {
+			if (angular.isDefined(vol)) {
+				angular.extend(this, vol);
 			}
 			return this;
 		};
 
-		this.getPath = function(newId) {
-			return "/api/volumes/" + (angular.isDefined(newId) ? newId : this.id) + "/";
+		this.getPath = function(id) {
+			return "/api/volumes/" + encodeURIComponent(id || this.id) + "/";
 		};
 
-		this.load = function(newId) {
+		this.load = function(id) {
 			var self = this;
-			$http.get(self.getPath(newId)).then(function success(response) {
-				return this.setData(response.data);
+			$http.get(self.getPath(id)).then(function success(response) {
+				return self.setData(response.data);
 			});
 		};
 
@@ -194,46 +353,78 @@ app.factory("Volume", function($http, LOCAL_VOLUME_ID) {
 				case "google": return "fa-google";
 				case "amazon": return "fa-amazon";
 			}
-			return (this.interface == "usb") ? "fa-usb" : ((this.interface == "network") ? "fa-server" : "fa-share-alt");
+			return (this.interface === "usb") ? "fa-usb" : ((this.interface === "network") ? "fa-server" : "fa-share-alt");
 		};
 
 		this.isLocal = function() {
-			return this.id == LOCAL_VOLUME_ID;
-		};
-
-		this.mount = function() {
-			return $http.post(this.getPath() + "mount");
-		};
-
-		this.unmount = function() {
-			return $http.post(this.getPath() + "unmount");
+			return this.id === LOCAL_VOLUME_ID;
 		};
 
 		this.setData(volume);
 	};
 });
 
-app.factory("Volumes", function($http, Volume, LOCAL_VOLUME_ID) {
+app.factory("Volumes", function($http, $uibModal, Volume, LOCAL_VOLUME_ID) {
+	var currentVolume = undefined;
+
+	function getPath(volume) {
+		return "/api/volumes/" + encodeURIComponent(volume || "");
+	}
+
+	function getLocal() {
+		return $http.get(getPath(LOCAL_VOLUME_ID)).then(function success(response) {
+			return new Volume(response.data);
+		});
+	}
+
+	function parseList(response) {
+		return response.data.map(function(v, i, a) {
+			return new Volume(v);
+		});
+	}
+
+	getLocal().then(function success(local) {
+		currentVolume = local;
+	})
+
 	return {
-		getPath: function() {
-			return "/api/volumes/";
-		},
-
-		parseList: function(response) {
-			return response.data.map(function(v, i, a) {
-				return new Volume(v);
-			});			
-		},
-
 		getList: function() {
-			var self = this;
-			return $http.get(this.getPath()).then(function success(response) {
-				return self.parseList(response);
+			return $http.get(getPath()).then(function success(response) {
+				return parseList(response);
 			});
 		},
 
 		getLocal: function() {
-			return $http.get(this.getPath() + LOCAL_VOLUME_ID).then(function success(response) {
+			return getLocal();
+		},
+
+		isCurrent: function(volume) {
+			return angular.isDefined(currentVolume) && currentVolume.id === volume.id;
+		},
+
+		getCurrent: function() {
+			return currentVolume;
+		},
+
+		select: function() {
+			return $uibModal.open({
+				animation: false,
+				templateUrl: "storage.html",
+				controller: "StorageCtrl",
+				size: "lg"
+			}).result.then(function success(volume) {
+				currentVolume = volume;
+			});
+		},
+
+		mount: function(volume) {
+			return $http.post(volume.getPath() + "mount").then(function success(response) {
+				return new Volume(response.data);
+			});
+		},
+
+		unmount: function(volume) {
+			return $http.post(volume.getPath() + "unmount").then(function succeed(response) {
 				return new Volume(response.data);
 			});
 		}
@@ -282,7 +473,9 @@ app.factory("Document", function($http, DEFAULT_DOCUMENT_NAME) {
 
 		this.save = function(volume, nameOverride, autoSave) {
 			var self = this;
-			return $http.put(this.getPath(volume, nameOverride), self.content, { headers: { "Content-Type": "text/plain" } }).then(function success(response) {
+			var body = self.content;
+			var hdrs = { "Content-Type": "text/plain" };
+			return $http.put(this.getPath(volume, nameOverride), body, { headers: hdrs }).then(function success(response) {
 				if (angular.isDefined(autoSave) && autoSave) {
 					return self;
 				} else {
@@ -310,7 +503,7 @@ app.factory("Document", function($http, DEFAULT_DOCUMENT_NAME) {
 		};
 
 		this.canSave = function() {
-			return this.isDirty() && this.name != "" && this.content != "";
+			return this.isDirty() && this.content !== "";
 		};
 
 		this.shouldSave = function() {
@@ -318,139 +511,68 @@ app.factory("Document", function($http, DEFAULT_DOCUMENT_NAME) {
 		};
 
 		this.setData(doc);
-	}
+	};
 });
 
-app.factory("Documents", function($http, Document) {
+app.factory("Documents", function($http, $uibModal, Document) {
+	var currentDocument = new Document();
+
 	return {
 		getPath: function(volume) {
 			return volume.getPath() + "files/";
 		},
 
 		getList: function(volume) {
-			var self = this;
 			return $http.get(this.getPath(volume)).then(function success(response) {
 				return response.data.map(function(v, i, a) {
 					return new Document(v);
 				});
 			});
-		}
-	};
-});
-
-app.factory("User", function($http) {
-	return function(user) {
-		this.setData = function(user) {
-			angular.extend(this, user);
-			return this;
-		};
-
-		this.getPath = function(username) {
-			return "/api/users/" + encodeURIComponent(angular.isDefined(username) ? username : this.username);
-		};
-
-		this.getName = function() {
-			return this.username;
-		};
-
-		this.reset = function(user) {
-			if (angular.isUndefined(user)) {
-				user = {
-					username: undefined
-				}
-			}
-			this.setData(user);
-		};
-
-		this.load = function(username) {
-			var self = this;
-			return $http.get(this.getPath(username)).then(function success(response) {
-				return self.reset({
-					username: username
-				});
-			});
-		};
-
-		this.login = function(password) {
-			var self = this;
-			return $http.post("/api/login", { username: self.username, password: password });
-		};
-
-		this.logout = function() {
-			return $http.post("/api/logout");
-		};
-
-		this.whoami = function() {
-			var self = this;
-			return $http.get("/api/whoami").then(function success(response) {
-				self.reset(response.data);
-			}, function failure() {
-				self.reset(undefined);
-			});
-		};
-
-		this.changeUsername = function(old_password, new_username) {
-			return $http.post(this.getPath(), { password: old_password, new_username: new_username });
-		};
-
-		this.changePassword = function(old_password, new_password) {
-			return $http.post(this.getPath(), { password: old_password, new_password: new_password });
-		};
-
-		this.setData(user);
-	}
-});
-
-app.factory("Users", function($http, User) {
-	return {
-		getPath: function() {
-			return "/api/users/";
 		},
 
-		parseList: function(response) {
-			return response.data.map(function(u, i, a) {
-				return new User(u);
-			});			
+		getCurrent: function() {
+			return currentDocument;
 		},
 
-		getList: function() {
-			var self = this;
-			return $http.get(this.getPath()).then(function success(response) {
-				return self.parseList(response);
+		select: function() {
+			return $uibModal.open({
+				animation: false,
+				templateUrl: "docs.html",
+				controller: "DocumentsCtrl",
+				size: "lg"
+			}).result.then(function success(selected) {
+				return currentDocument.load(selected.volume, selected.doc.name);
 			});
 		},
 
-		create: function(username, password) {
-			var self = this;
-			return $http.put(this.getPath() + encodeURIComponent(username), { password: password }).then(function success(response) {
-				return self.parseList(response);
-			});
-		},
-
-		remove: function(username, password) {
-			var self = this;
-			return $http.delete(this.getPath() + encodeURIComponent(username), { data: { password: password }, headers: { "Content-Type": "application/json" } }).then(function success(response) {
-				return self.parseList(response);
+		save: function() {
+			return $uibModal.open({
+				animation: false,
+				templateUrl: "save_doc.html",
+				controller: "SaveDocCtrl",
+				size: "lg"
+			}).result.then(function success(selected) {
+				return currentDocument.save(selected.volume, selected.doc.name, false);
 			});
 		}
 	};
 });
 
-app.factory("Lock", function($q, User, Password, MessageBox) {
+app.factory("Lock", function($q, Users, Password, MessageBox) {
 	var UNLOCKED = 0, LOCKED = 1, CHALLENGING = 2;
 	var lockMode = 0;
 
 	return {
 		isUnlocked: function() {
-			return lockMode == UNLOCKED;
+			return lockMode === UNLOCKED;
 		},
 
 		isLocked: function() {
-			return lockMode == LOCKED;
+			return lockMode === LOCKED;
 		},
 
 		isChallenging: function() {
-			return lockMode == CHALLENGING;
+			return lockMode === CHALLENGING;
 		},
 
 		unlock: function() {
@@ -461,7 +583,7 @@ app.factory("Lock", function($q, User, Password, MessageBox) {
 			lockMode = LOCKED;
 		},
 
-		challenge: function(user, timeout) {
+		challenge: function(timeout) {
 			return $q(function(resolve, reject) {
 				switch (lockMode) {
 					case UNLOCKED:
@@ -470,25 +592,30 @@ app.factory("Lock", function($q, User, Password, MessageBox) {
 
 					case LOCKED:
 						lockMode = CHALLENGING;
-						Password.challenge({
-							title: "Enter Password to Unlock " + user.username,
-							timeout: timeout
-						}).then(function success(response) {
-							user.login(response.password).then(function success() {
-								lockMode = UNLOCKED;
-								resolve("unlocked");
+						if (Users.isLoggedIn()) {
+							Password.challenge({
+								title: "Enter Password to Unlock " + Users.getCurrent().username,
+								timeout: timeout
+							}).then(function success(response) {
+								Users.login(Users.getCurrent().username, response.password).then(function success() {
+									lockMode = UNLOCKED;
+									resolve("unlocked");
+								}, function failure() {
+									lockMode = LOCKED;
+									MessageBox.error({
+										message: "Uh oh, you did not say the magic word!",
+										timeout: timeout
+									});
+									reject("wrong password");
+								});
 							}, function failure() {
 								lockMode = LOCKED;
-								MessageBox.error({
-									message: "Uh oh, you did not say the magic word!",
-									timeout: timeout
-								});
-								reject("wrong password");
+								reject("dismissed password dialog");
 							});
-						}, function failure() {
-							lockMode = LOCKED;
-							reject("dismissed password dialog");
-						});
+						} else {
+							lockMode = UNLOCKED;
+							resolve("unlocked");
+						}
 						break;
 
 					case CHALLENGING:
@@ -500,19 +627,14 @@ app.factory("Lock", function($q, User, Password, MessageBox) {
 	};
 });
 
-app.controller("SoloWriterCtrl", function($scope, $window, $log, $http, $interval, $timeout, $uibModal, Idle, Keepalive, Settings, Lock, User, Volumes, Volume, Document, MessageBox, CONTENT_ID, AUTOSAVE_FREQUENCY_NEVER) {
+app.controller("SoloWriterCtrl", function($scope, $window, $log, $http, $interval, $timeout, $uibModal, Idle, Keepalive, Settings, Lock, Users, Volumes, Documents, MessageBox, CONTENT_ID) {
 	$scope.settings = Settings;
-	$scope.currentVolume = undefined;
-	$scope.currentDocument = new Document();
-	$scope.currentUser = undefined;
-
-	Volumes.getLocal().then(function success(local) {
-		$scope.currentVolume = local;
-	});
+	$scope.currentDocument = Documents.getCurrent();
+	$scope.showBackgroundImage = true;
 
 	$scope.setDirty = function() {
-		$scope.settings.clearBackgroundImage();
-		$scope.currentDocument.setDirty();
+		$scope.showBackgroundImage = false;
+		Documents.getCurrent().setDirty();
 	};
 
 	$scope.reload = function() {
@@ -527,44 +649,16 @@ app.controller("SoloWriterCtrl", function($scope, $window, $log, $http, $interva
 		$http.post("/api/shutdown");
 	};
 
-	$scope.isLoggedIn = function() {
-		return angular.isDefined($scope.currentUser);
-	};
-
-	$scope.selectUser = function() {
-		$uibModal.open({
-			animation: false,
-			templateUrl: "users.html",
-			controller: "UsersCtrl",
-			resolve: {
-				currentUser: function() {
-					return angular.copy($scope.currentUser);
-				}
-			}
-		}).result.then(function success(response) {
-			if (angular.isDefined(response.user)) {
-				$scope.currentUser = angular.copy(response.user);
-			} else {
-				// the user must have logged out the current user
-				$scope.currentUser = undefined;
-			}
-		}, function failure(response) {
-			// no-op - we're just closing the dialog
-		}).finally(function () {
-			setFocus(CONTENT_ID);
-		});
-	};
-
 	$scope.resetDoc = function(ask) {
-		if (ask && $scope.currentDocument.isDirty()) {
+		if (ask && Documents.getCurrent().isDirty()) {
 			MessageBox.confirm({
-				name: $scope.currentDocument.name
+				name: Documents.getCurrent().name
 			}).then(function ok() {
 				$scope.resetDoc(false); // call myself without prompting
 			});
 		} else {
-			$scope.currentDocument.reset();
-			$scope.settings.setBackgroundImage();
+			Documents.getCurrent().reset();
+			$scope.showBackgroundImage = Settings.getBackgroundImage();
 			$timeout(function() {
 				setFocus(CONTENT_ID);
 				setCaretToPos(CONTENT_ID, 0);
@@ -574,131 +668,98 @@ app.controller("SoloWriterCtrl", function($scope, $window, $log, $http, $interva
 	};
 
 	$scope.openDoc = function(ask) {
-		if (ask && $scope.currentDocument.isDirty()) {
+		if (ask && Documents.getCurrent().isDirty()) {
 			MessageBox.confirm({
-				name: $scope.currentDocument.name
+				name: Documents.getCurrent().name
 			}).then(function ok() {
 				$scope.openDoc(false); // call myself without prompting
 			});
 		} else {
-			$uibModal.open({
-				animation: false,
-				templateUrl: "docs.html",
-				controller: "DocumentsCtrl",
-				resolve: {
-					currentVolume: function() {
-						return $scope.currentVolume;
-					},
-					currentUser: function() {
-						return $scope.currentUser;
-					}
-				}
-			}).result.then(function success(selected) {
-				$scope.currentDocument.load(selected.volume, selected.doc.name).then(function success() {
-					$scope.settings.clearBackgroundImage();
-					$timeout(function () {
-						setFocus(CONTENT_ID);
-						setCaretToPos(CONTENT_ID, 0);
-						scrollTop(CONTENT_ID, 0);
-					});
+			Documents.select().then(function success(doc) {
+				$scope.currentDocument = doc;
+				$scope.showBackgroundImage = false;
+				$timeout(function () {
+					setFocus(CONTENT_ID);
+					setCaretToPos(CONTENT_ID, 0);
+					scrollTop(CONTENT_ID, 0);
 				});
 			});
 		}
 	};
 
-	$scope.saveDoc = function(name, autoSave) {
-		$scope.currentDocument.save($scope.currentVolume, name, autoSave);
-		setFocus(CONTENT_ID);
-	};
-
-	$scope.selectStorage = function() {
-		$uibModal.open({
-			animation: false,
-			templateUrl: "storage.html",
-			controller: "StorageCtrl",
-			resolve: {
-				currentVolume: function() {
-					return $scope.currentVolume;
-				}
-			}
-		}).result.then(function success(selected) {
-			$scope.currentVolume = selected.volume;
-		}).finally(function() {
+	$scope.saveDoc = function() {
+		Documents.save().finally(function() {
 			setFocus(CONTENT_ID);
 		});
 	};
 
-	$scope.selectAutoSave = function() {
-		$uibModal.open({
-			animation: false,
-			templateUrl: "autosave.html",
-			controller: "AutoSaveCtrl",
-			resolve: {
-				autoSave: function() {
-					return {
-						frequency: $scope.settings.getAutoSaveFrequency(),
-						tempName: angular.copy($scope.settings.getAutoSaveTempName())
-					};
-				}
-			}
-		}).result.then(function success(selected) {
-			$scope.settings.setAutoSaveFrequency(selected.frequency);
-			$scope.settings.setAutoSaveTempName(selected.tempName);
+	$scope.selectUser = function() {
+		Users.select().finally(function() {
+			setFocus(CONTENT_ID);
+		});
+	};
+
+	$scope.selectStorage = function() {
+		Volumes.select().finally(function() {
+			setFocus(CONTENT_ID);
+		});
+	};
+
+	$scope.selectSettings = function() {
+		Settings.select().then(function succeed() {
+			$scope.startLockScreen();
 			$scope.startAutoSave();
 		}).finally(function() {
 			setFocus(CONTENT_ID);
 		});
 	};
 
+	$scope.startLockScreen = function() {
+		var lockScreenTime = Settings.getLockScreenTime();
+		Idle.setTimeout(lockScreenTime.enabled ? lockScreenTime.asSec().current : 0);
+	};
+
 	$scope.startAutoSave = function() {
-		if ($scope.settings.getAutoSaveFrequency() == AUTOSAVE_FREQUENCY_NEVER) {
-			// do nothing
+		var autoSaveTime = Settings.getAutoSaveTime();
+		if (autoSaveTime.enabled) {
+			Keepalive.setInterval(autoSaveTime.asSec().current);
 		} else {
-			Keepalive.setInterval($scope.settings.getAutoSaveFrequencyAsMs() / 1000);
+			Idle.keepalive(false);
 		}
+		Idle.setTimeout(autoSaveTime.asSec().current); // no-op to kick it
 	};
 
 	$scope.autoSave = function() {
-		if ($scope.currentDocument.shouldSave()) {
+		if (Documents.getCurrent().shouldSave() && Settings.getAutoSaveTime().enabled) {
 			$log.info(now8601() + " -- autosaving");
-			$scope.currentDocument.save($scope.currentVolume, $scope.settings.getAutoSaveTempName($scope.currentDocument.getName()).name, true);
+			Documents.getCurrent().save(Volumes.getCurrent(), Settings.getAutoSaveName().name(Documents.getCurrent().getName()), true);
 		} else {
 			$log.debug(now8601() + " -- skipped autosave, nothing to save");
 		}
 	}
 
-	$scope.startSlideShow = function() {
-		$log.info("starting slideshow");
-		$scope.settings.enterSlideShow();
-		$timeout(function () {
-			// no-op to flush rendering
-		});
-	};
-
-	$scope.endSlideShow = function() {
-		$log.info("stopping slideshow");
-		$scope.settings.exitSlideShow();
-		$timeout(function () {
-			// no-op to flush rendering
-		});
-	};
-
 	$scope.lock = function() {
-		if ($scope.isLoggedIn()) {
+		if (Settings.getLockScreenTime().enabled) {
+			$log.info("locking...");
+			$scope.autoSave();
 			Lock.lock();
+			$timeout(angular.noop); // flush rendering
+			$log.info("locked");
 		}
-		$scope.autoSave();
-		$scope.startSlideShow();
-	};
+	};	
 
 	$scope.unlock = function() {
-		if (Lock.isLocked()) {
-			Lock.challenge($scope.currentUser, Idle.getTimeout() * 1000 / 3).then(function success() {
-				$scope.endSlideShow();
+		if (Settings.getLockScreenTime().enabled) {
+			$log.info("unlocking...");
+			Lock.challenge(Idle.getTimeout() * 1000 / 3).then(function success() {
+				$timeout(angular.noop); // flush rendering
+				$log.info("unlocked");
 			});
-		} else {
-			$scope.endSlideShow();
 		}
+	};
+
+	$scope.isLocked = function() {
+		return Lock.isLocked();
 	};
 
 	$scope.$on("IdleStart", function() {
@@ -736,40 +797,41 @@ app.controller("SoloWriterCtrl", function($scope, $window, $log, $http, $interva
 	$scope.startAutoSave();
 });
 
-app.controller("DocumentsCtrl", function ($scope, $uibModal, $uibModalInstance, Documents, currentVolume, currentUser, MessageBox) {
-	$scope.currentVolume = currentVolume;
-	$scope.currentUser = currentUser;
+app.controller("DocumentsCtrl", function ($scope, $uibModal, $uibModalInstance, Users, Volumes, Documents, MessageBox) {
+	$scope.currentUser = Users.getCurrent();
+	$scope.currentVolume = Volumes.getCurrent();
 	$scope.documents = undefined;
-	$scope.selected = undefined;
 	$scope.loading = false;
 
-	$scope.refreshDocuments = function() {
+	function refresh() {
 		$scope.loading = true;
-		Documents.getList($scope.currentVolume).then(function success(list) {
+		Documents.getList(Volumes.getCurrent()).then(function success(list) {
 			$scope.documents = list;
 		}).finally(function() {
 			$scope.loading = false;
 		});
+	}
+
+	$scope.userGreeting = function() {
+		return angular.isDefined($scope.currentUser) ? ($scope.currentUser.username + "'s") : "Shared";
+	};
+
+	$scope.selectUser = function() {
+		Users.select().then(function success() {
+			$scope.currentUser = Users.getCurrent();
+			refresh();
+		});
 	};
 
 	$scope.selectStorage = function() {
-		$uibModal.open({
-			animation: false,
-			templateUrl: "storage.html",
-			controller: "StorageCtrl",
-			resolve: {
-				currentVolume: function() {
-					return $scope.currentVolume;
-				}
-			}
-		}).result.then(function (selected) {
-			$scope.currentVolume = selected.volume;
-			$scope.refreshDocuments();
+		Volumes.select().then(function success() {
+			$scope.currentVolume = Volumes.getCurrent();
+			refresh();
 		});
 	};
 
 	$scope.selectDoc = function(doc) {
-		$uibModalInstance.close({ doc: doc, volume: $scope.currentVolume });
+		$uibModalInstance.close({ volume: Volumes.getCurrent(), doc: doc });
 	};
 
 	$scope.deleteDoc = function(doc) {
@@ -777,88 +839,162 @@ app.controller("DocumentsCtrl", function ($scope, $uibModal, $uibModalInstance, 
 			name: doc.name,
 			message: "Deleting document [" + doc.name + "]. Are you sure?"
 		}).then(function ok() {
-			doc.remove($scope.currentVolume);
+			doc.remove(Volumes.getCurrent());
 			doc.removed = true;
 		});
 	};
 
-	$scope.refreshDocuments();
+	refresh();
 });
 
-app.controller("StorageCtrl", function ($scope, $uibModalInstance, Volumes, currentVolume) {
-	$scope.volumes = undefined;
-	$scope.selected = currentVolume;
-	$scope.loading = false;
+app.controller("SaveDocCtrl", function ($scope, $uibModalInstance, $log, Users, Volumes, Documents) {
+	$scope.currentVolume = Volumes.getCurrent();
+	$scope.currentUser = Users.getCurrent();
+	$scope.currentDocument = Documents.getCurrent();
+	if (angular.isUndefined($scope.currentDocument.name) || $scope.currentDocument.name.trim().length == 0) {
+		// Grab the first non-blank line from the document content to propose as the default name
+		var line = $scope.currentDocument.content.match(/^\s*(.+)\s*$/m);
+		if (angular.isDefined(line)) {
+			$scope.currentDocument.name = line[0].trim();
+		}
+	}
 
-	$scope.refreshVolumes = function() {
-		$scope.loading = true;
-		Volumes.getList().then(function success(list) {
-			$scope.volumes = list;
-		}).finally(function() {
-			$scope.loading = false;
+	$scope.userGreeting = function() {
+		return angular.isDefined($scope.currentUser) ? ($scope.currentUser.username + "'s") : "Shared";
+	};
+
+	$scope.selectUser = function() {
+		Users.select().then(function success() {
+			$scope.currentUser = Users.getCurrent();
 		});
 	};
 
-	$scope.isVolumeSelected = function(volume) {
-		return $scope.selected.id == volume.id;
-	};
-
-	$scope.selectVolume = function(volume) {
-		$scope.selected = volume;
-		$uibModalInstance.close({ volume: volume });
-	};
-
-	$scope.mountVolume = function(volume) {
-		$scope.loading = volume.id;
-		volume.mount().then(function success(response) {
-			$scope.volumes = Volumes.parseList(response);
-		}).finally(function() {
-			$scope.loading = false;
+	$scope.selectStorage = function() {
+		Volumes.select().then(function success() {
+			$scope.currentVolume = Volumes.getCurrent();
 		});
 	};
-
-	$scope.unmountVolume = function(volume) {
-		$scope.loading = volume.id;
-		volume.unmount().then(function success(response) {
-			$scope.volumes = Volumes.parseList(response);
-		}).finally(function() {
-			$scope.loading = false;
-		});
-	};
-
-	$scope.refreshVolumes();
-});
-
-app.controller("AutoSaveCtrl", function ($scope, $uibModalInstance, autoSave, AUTOSAVE_FREQUENCY_NEVER) {
-	$scope.never = AUTOSAVE_FREQUENCY_NEVER;
-	$scope.frequency = autoSave.frequency;
-	$scope.tempName = angular.copy(autoSave.tempName);
 
 	$scope.ok = function() {
-		$uibModalInstance.close({ frequency: $scope.frequency, tempName: angular.copy($scope.tempName) });
+		$uibModalInstance.close({ volume: $scope.currentVolume, doc: $scope.currentDocument });
 	};
 });
 
-app.controller("UsersCtrl", function ($scope, $log, $uibModalInstance, Users, User, Password, MessageBox, currentUser) {
+app.controller("StorageCtrl", function ($scope, $uibModalInstance, $log, Volumes, MessageBox) {
+	$scope.volumes = undefined;
+	$scope.loading = true;
+
+	Volumes.getList().then(function success(list) {
+		$scope.volumes = list;
+	}).finally(function() {
+		$scope.loading = false;
+	});
+
+	$scope.isOperatingOn = function(volume) {
+		// $log.info("operating on: " + volume.id + ": " + ($scope.loading === volume.id));
+		return $scope.loading === volume.id;
+	};
+
+	$scope.isCurrent = function(volume) {
+		return Volumes.isCurrent(volume);
+	};
+
+	$scope.isMountable = function(volume) {
+		var v = !volume.mounted && volume.can_mount && !$scope.isOperatingOn(volume);
+		$log.info("isMountable(" + volume.id + "): " + v);
+		return v;
+	};
+
+	$scope.isUnmountable = function(volume) {
+		var v = volume.mounted && volume.can_unmount && !$scope.isOperatingOn(volume);
+		$log.info("isUnmountable(" + volume.id + "): " + v);
+		return v;
+	};
+
+	$scope.isSelectable = function(volume) {
+		return volume.mounted && !$scope.isOperatingOn(volume);
+	};
+
+	$scope.select = function(volume) {
+		$uibModalInstance.close(volume);
+	};
+
+	$scope.mount = function(volume) {
+		$scope.loading = volume.id;
+		Volumes.mount(volume).then(function success(vol) {
+			volume = vol;
+		}, function failure() {
+			MessageBox.error({
+				message: "Failed to connect [" + volume.name + "]"
+			});
+		}).finally(function() {
+			$scope.loading = false;
+		});
+	};
+
+	$scope.unmount = function(volume) {
+		$scope.loading = volume.id;
+		$timeout(angular.noop);
+		Volumes.unmount(volume).then(function success(vol) {
+			volume = vol;
+		}, function failure() {
+			MessageBox.error({
+				message: "Failed to disconnect [" + volume.name + "]"
+			});
+		}).finally(function() {
+			$scope.loading = false;
+		});
+	};
+});
+
+app.controller("SettingsCtrl", function ($scope, $uibModalInstance, $log, Settings, Volumes) {
+	$scope.textSize = Settings.getTextSize();
+	$scope.autoSaveTime = Settings.getAutoSaveTime().asMin();
+	$scope.autoSaveName = Settings.getAutoSaveName();
+	$scope.lockScreenTime = Settings.getLockScreenTime().asMin();
+	$scope.lockScreenInterval = Settings.getLockScreenInterval().asSec();
+	$scope.backgroundImage = Settings.getBackgroundImage();
+	$scope.fonts = [
+		"Georgia",
+		"Verdana",
+		"Arial",
+		"Times New Roman"
+	];
+
+	$scope.selectStorage = function() {
+		Volumes.select();
+	};
+
+	$scope.ok = function() {
+		$uibModalInstance.close({
+			textSize: $scope.textSize,
+			autoSaveTime: $scope.autoSaveTime.restore(),
+			autoSaveName: $scope.autoSaveName,
+			lockScreenTime: $scope.lockScreenTime.restore(),
+			lockScreenInterval: $scope.lockScreenInterval.restore(),
+			backgroundImage: $scope.backgroundImage
+		});
+	};
+});
+
+app.controller("UsersCtrl", function ($scope, $log, $uibModalInstance, Users, Password, MessageBox) {
 	$scope.users = undefined;
-	$scope.currentUser = currentUser;
+	$scope.currentUser = Users.getCurrent();
 	$scope.username = "";
 	$scope.password = "";
 
-	$scope.refreshUsers = function() {
+	function refresh() {
 		$scope.loading = true;
 		Users.getList().then(function success(list) {
 			$scope.users = list;
+			$scope.currentUser = Users.getCurrent();
 		}).finally(function() {
 			$scope.loading = false;
 		});
-	};
+	}
 
-	$scope.isCurrentUser = function(user) {
-		if (angular.isDefined($scope.currentUser)) {
-			return $scope.currentUser.username == user.username;
-		}
-		return false;
+	$scope.isCurrent = function(user) {
+		return Users.isCurrent(user);
 	};
 
 	$scope.loginUser = function(user) {
@@ -866,9 +1002,9 @@ app.controller("UsersCtrl", function ($scope, $log, $uibModalInstance, Users, Us
 			for: user.username
 		}).then(function success(response) {
 			$scope.loading = true;
-			user.login(response.password).then(function success() {
+			Users.login(user.username, response.password).then(function success(user) {
 				$log.info("logged in as " + user.username);
-				$uibModalInstance.close({ user: user });
+				$uibModalInstance.close(user);
 			}, function failure() {
 				MessageBox.error({
 					message: "Failed to login as " + user.username
@@ -881,17 +1017,17 @@ app.controller("UsersCtrl", function ($scope, $log, $uibModalInstance, Users, Us
 
 	$scope.logoutUser = function(user) {
 		$scope.loading = true;
-		user.logout().then(function success() {
-			$uibModalInstance.close({ user: undefined });
+		Users.logout().then(function success() {
+			$uibModalInstance.close(undefined);
 		}).finally(function() {
 			$scope.loading = false;
 		});
 	};
 
-	$scope.addUser = function() {
+	$scope.addUser = function(username, password) {
 		$scope.loading = true;
-		Users.create($scope.username.trim(), $scope.password).then(function success(list) {
-			$scope.users = list;
+		Users.create(username, password).then(function success(user) {
+			$scope.users.push(user);
 			$scope.username = undefined;
 			$scope.password = undefined;
 		}, function failure(response) {
@@ -908,8 +1044,8 @@ app.controller("UsersCtrl", function ($scope, $log, $uibModalInstance, Users, Us
 			for: user.username
 		}).then(function success(password) {
 			$scope.loading = true;
-			Users.remove(user.username, password.password).then(function success(list) {
-				$scope.users = list;
+			user.remove(password.password).then(function success() {
+				refresh();
 			}, function failure() {
 				MessageBox.error({
 					message: "Failed to delete " + user.username
@@ -928,8 +1064,8 @@ app.controller("UsersCtrl", function ($scope, $log, $uibModalInstance, Users, Us
 			value: user.username
 		}).then(function success(response) {
 			$scope.loading = true;
-			user.changeUsername(response.password, response.new_username).then(function success() {
-				$scope.refreshUsers();
+			user.changeUsername(response.password, response.new_username).then(function success(user) {
+				// no-op
 			}, function failure() {
 				MessageBox.error({
 					message: "Failed to change username of " + user.username
@@ -949,8 +1085,8 @@ app.controller("UsersCtrl", function ($scope, $log, $uibModalInstance, Users, Us
 			is_password: true
 		}).then(function success(response) {
 			$scope.loading = true;
-			user.changePassword(response.password, response.new_password).then(function success() {
-				$scope.refreshUsers();
+			user.changePassword(response.password, response.new_password).then(function success(user) {
+				// no-op
 			}, function failure() {
 				MessageBox.error({
 					message: "Failed to change password of " + user.username
@@ -961,7 +1097,7 @@ app.controller("UsersCtrl", function ($scope, $log, $uibModalInstance, Users, Us
 		});
 	};
 
-	$scope.refreshUsers();
+	refresh();
 });
 
 app.service("Password", function($uibModal) {
@@ -1078,12 +1214,12 @@ app.controller("MessageBoxCtrl", function ($scope, $uibModalInstance, $timeout, 
 	};
 });
 
-app.controller("SlideShowCtrl", function ($scope) {
-	$scope.interval = $scope.settings.getSlideShowInterval();
+app.controller("SlideShowCtrl", function ($scope, Settings) {
+	$scope.interval = Settings.getLockScreenInterval().asMs().current;
 	$scope.active = 0;
 
 	$scope.slides = [ ];
-	for(var i = 1; i <= 80; ++i) {
+	for(var i = 1; i <= 60; ++i) {
 		$scope.slides.push({
 			image: "/images/slides/slide-" + i + ".jpg"
 		});
@@ -1092,7 +1228,7 @@ app.controller("SlideShowCtrl", function ($scope) {
 
 app.filter("bytes", function() {
 	return function(bytes, precision) {
-		if (bytes == 0 || isNaN(parseFloat(bytes)) || !isFinite(bytes)) return "-";
+		if (bytes === 0 || isNaN(parseFloat(bytes)) || !isFinite(bytes)) return "-";
 		if (angular.isUndefined(precision)) precision = 1;
 		var units = [ "B", "KB", "MB", "GB", "TB", "PB" ];
 		var number = Math.floor(Math.log(bytes) / Math.log(1024));
@@ -1112,4 +1248,26 @@ app.directive("ngEnter", function () {
 			}
 		});
 	};
+});
+
+app.directive('ngCheckbox', function() {
+	return {
+		restrict: 'E',
+		require: 'ngModel',
+		replace: true,
+		transclude: true,
+		template: '<span class="fa" role="button" ng-class="isChecked ? \'fa-check-square-o\' : \'fa-square-o\'" ng-click="toggleMe()"><ng-transclude/></span>',
+		scope: { isChecked: '=?' },
+		link: function(scope, elem, attrs, model) {
+			model.$formatters.unshift(function(value) {
+				scope.isChecked = value == true;
+				return value;
+            });
+
+			scope.toggleMe = function() {
+				scope.isChecked = !scope.isChecked;
+				model.$setViewValue(scope.isChecked);
+			}
+		}
+	}
 });

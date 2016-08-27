@@ -1,0 +1,71 @@
+<div class="modal-header bg-primary">
+	<h4 class="modal-title pull-left">Settings</h4>
+	<i class="fa fa-2x fa-close pull-right" role="button" ng-click="$dismiss('cancel')"></i>
+</div>
+<div class="modal-body">
+	<form>
+		<table class="table">
+			<tr>
+				<td class="col-sm-3">
+					<label class="control-label">Text Size</label>
+				</td>
+				<td class="col-sm-9">
+					<select style="width: 30%; display: inline" ng-options="font for font in fonts" ng-model="textSize.font"></select>
+					<span class="pull-right" ng-style="textSize.asStyle()">Lorem ipsum</span>
+					<div>
+						<input type="range" ng-model="textSize.current" min="{{textSize.min}}" max="{{textSize.max}}" step="{{textSize.step}}" autofocus></input>
+					</div>
+				</td>
+			</tr>
+			<tr>
+				<td class="col-sm-3">
+					<label class="control-label">Auto Save</label>
+				</td>
+				<td class="col-sm-9">
+					<ng-checkbox ng-model="autoSaveTime.enabled"> Enable</ng-checkbox>
+					<span class="pull-right" ng-show="autoSaveTime.enabled">Every {{autoSaveTime.current}} {{autoSaveTime.units}}</span>
+					<div ng-show="autoSaveTime.enabled">
+						<input type="range" ng-model="autoSaveTime.current" min="{{autoSaveTime.min}}" max="{{autoSaveTime.max}}" step="{{autoSaveTime.step}}" autofocus></input>
+						<ng-checkbox ng-model="autoSaveName.enabled"> Use Temporary Name: <samp>{{autoSaveName.pattern}}</samp></ng-checkbox>
+					</div>
+				</td>
+			</tr>
+			<tr>
+				<td class="col-sm-3">
+					<label class="control-label">Lock Screen</label>
+				</td>
+				<td class="col-sm-9">
+					<ng-checkbox ng-model="lockScreenTime.enabled"> Enable</ng-checkbox>
+					<span class="pull-right" ng-show="lockScreenTime.enabled">In {{lockScreenTime.current}} {{lockScreenTime.units}}</span>
+					<div ng-show="lockScreenTime.enabled">
+						<input type="range" ng-model="lockScreenTime.current" min="{{lockScreenTime.min}}" max="{{lockScreenTime.max}}" step="{{lockScreenTime.step}}" autofocus></input>
+					</div>
+				</td>
+			</tr>
+			<tr ng-show="lockScreenTime.enabled">
+				<td class="col-sm-3">
+					<label class="control-label">Slide Show</label>
+				</td>
+				<td class="col-sm-9">
+					<ng-checkbox ng-model="lockScreenInterval.enabled"> Enable</ng-checkbox>
+					<span class="pull-right" ng-show="lockScreenInterval.enabled">Every {{lockScreenInterval.current}} {{lockScreenInterval.units}}</span>
+					<div ng-show="lockScreenInterval.enabled">
+						<input type="range" ng-model="lockScreenInterval.current" min="{{lockScreenInterval.min}}" max="{{lockScreenInterval.max}}" step="{{lockScreenInterval.step}}" autofocus></input>
+					</div>
+				</td>
+			</tr>
+			<tr>
+				<td class="col-sm-3">
+					<label class="control-label">Background</label>
+				</td>
+				<td class="col-sm-9" colspan="2">
+					<ng-checkbox ng-model="backgroundImage"> Show background image when not typing</ng-checkbox>
+				</td>
+			</tr>
+		</table>
+	</form>
+</div>
+<div class="modal-footer">
+	<button class="btn btn-primary" ng-click="selectStorage()"><i class="fa fa-lg fa-usb"></i>&nbsp;Storage</button>
+	<button class="btn btn-primary" type="submit" ng-click="ok()">OK</button>
+</div>

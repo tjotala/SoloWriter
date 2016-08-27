@@ -54,7 +54,7 @@ html {
     border: none;
     border-radius: 4px;
     font-family: Verdana;
-    font-size: 14pt;
+    font-size: 18px;
 }
 
 .logo {
@@ -62,7 +62,7 @@ html {
 }
 
 .modal-body {
-	max-height: 350px !important;
+	max-height: 300px !important;
 	overflow-y: auto !important;
 }
 
