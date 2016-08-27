@@ -50,7 +50,7 @@ app.factory("Volumes", function($http, $uibModal, Volume, LOCAL_VOLUME_ID) {
 	}
 
 	function parseList(response) {
-		return response.data.map(function(v, i, a) {
+		return response.map(function(v, i, a) {
 			return new Volume(v);
 		});
 	}
@@ -62,7 +62,7 @@ app.factory("Volumes", function($http, $uibModal, Volume, LOCAL_VOLUME_ID) {
 	return {
 		getList: function() {
 			return $http.get(getPath()).then(function success(response) {
-				return parseList(response);
+				return parseList(response.data);
 			});
 		},
 
@@ -108,7 +108,7 @@ app.controller("StorageCtrl", function ($scope, $uibModalInstance, $log, Volumes
 	$scope.loading = false;
 
 	function refresh() {
-		$scope.lodaing = true;
+		$scope.loading = true;
 		Volumes.getList().then(function success(list) {
 			$scope.volumes = list;
 		}).finally(function() {
