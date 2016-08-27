@@ -141,7 +141,7 @@ app.factory("Settings", function($window, $interpolate, $uibModal, CONTENT_ID, D
 			var self = this;
 			return $uibModal.open({
 				animation: false,
-				templateUrl: "settings.html",
+				templateUrl: "dialogs/settings.html",
 				controller: "SettingsCtrl",
 				size: "lg"
 			}).result.then(function success(settings) {

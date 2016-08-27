@@ -99,7 +99,7 @@ app.factory("Users", function($http, $log, $uibModal, User) {
 			var self = this;
 			return $uibModal.open({
 				animation: false,
-				templateUrl: "users.html",
+				templateUrl: "dialogs/users.html",
 				controller: "UsersCtrl",
 				size: "lg"
 			}).result.then(function success(user) {
@@ -244,7 +244,7 @@ app.service("Password", function($uibModal) {
 		}
 		return $uibModal.open({
 			animation: false,
-			templateUrl: "password.html",
+			templateUrl: "dialogs/password.html",
 			controller: "PasswordCtrl",
 			resolve: {
 				extra: function() {

@@ -245,7 +245,7 @@ app.service("MessageBox", function($uibModal) {
 	this.prompt = function(options) {
 		return $uibModal.open({
 			animation: false,
-			templateUrl: "messagebox.html",
+			templateUrl: "dialogs/messagebox.html",
 			controller: "MessageBoxCtrl",
 			size: "sm",
 			resolve: {

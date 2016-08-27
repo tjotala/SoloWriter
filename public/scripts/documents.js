@@ -118,7 +118,7 @@ app.factory("Documents", function($http, $uibModal, Document, MessageBox) {
 		select: function() {
 			return $uibModal.open({
 				animation: false,
-				templateUrl: "open_doc.html",
+				templateUrl: "dialogs/open_doc.html",
 				controller: "OpenDocCtrl",
 				size: "lg"
 			}).result.then(function success(selected) {
@@ -136,7 +136,7 @@ app.factory("Documents", function($http, $uibModal, Document, MessageBox) {
 			var self = this;
 			return $uibModal.open({
 				animation: false,
-				templateUrl: "save_doc.html",
+				templateUrl: "dialogs/save_doc.html",
 				controller: "SaveDocCtrl",
 				size: "lg"
 			}).result.then(function success(selected) {

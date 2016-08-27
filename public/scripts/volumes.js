@@ -81,7 +81,7 @@ app.factory("Volumes", function($http, $uibModal, Volume, LOCAL_VOLUME_ID) {
 		select: function() {
 			return $uibModal.open({
 				animation: false,
-				templateUrl: "storage.html",
+				templateUrl: "dialogs/storage.html",
 				controller: "StorageCtrl",
 				size: "lg"
 			}).result.then(function success(volume) {
