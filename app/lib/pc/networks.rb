@@ -12,7 +12,7 @@ class Networks
 				ssid: nil,
 				encryption: false,
 				quality: 0,
-				ip_address: ifaddr.addr.ip_address,
+				ipv4_address: ifaddr.addr.ip_address,
 				mac_address: ifaddr.inspect[/hwaddr=([\h:]+)/, 1], # hokey, but works at least on RPi
 			})
 		end
