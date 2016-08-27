@@ -32,6 +32,18 @@ app.factory("Volume", function($http, LOCAL_VOLUME_ID) {
 			return this.id === LOCAL_VOLUME_ID;
 		};
 
+		this.isMounted = function() {
+			return this.mounted;
+		};
+
+		this.isMountable = function() {
+			return !this.mounted && this.can_mount;
+		};
+
+		this.isUnmountable = function() {
+			return this.mounted && this.can_unmount;
+		};
+
 		this.setData(volume);
 	};
 });
@@ -83,7 +95,7 @@ app.factory("Volumes", function($http, $uibModal, Volume, LOCAL_VOLUME_ID) {
 				animation: false,
 				templateUrl: "dialogs/storage.html",
 				controller: "StorageCtrl",
-				size: "lg"
+				size: "md"
 			}).result.then(function success(volume) {
 				currentVolume = volume;
 			});
@@ -125,15 +137,15 @@ app.controller("StorageCtrl", function ($scope, $uibModalInstance, $log, Volumes
 	};
 
 	$scope.isMountable = function(volume) {
-		return !volume.mounted && volume.can_mount && !$scope.isOperatingOn(volume);
+		return volume.isMountable() && !$scope.isOperatingOn(volume);
 	};
 
 	$scope.isUnmountable = function(volume) {
-		return volume.mounted && volume.can_unmount && !$scope.isOperatingOn(volume);
+		return volume.isUnmountable() && !$scope.isOperatingOn(volume);
 	};
 
 	$scope.isSelectable = function(volume) {
-		return volume.mounted && !$scope.isOperatingOn(volume);
+		return volume.isMounted() && !$scope.isOperatingOn(volume);
 	};
 
 	$scope.select = function(volume) {
