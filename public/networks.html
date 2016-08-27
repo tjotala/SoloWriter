@@ -1,0 +1,30 @@
+<div class="modal-header bg-success">
+	<h4 class="modal-title pull-left">Network Settings</h4>
+	<i role="button" class="fa fa-2x fa-close pull-right" ng-click="$dismiss('cancel')"></i>
+	<i class="fa fa-2x fa-spinner fa-spin pull-right" ng-show="loading"></i>
+</div>
+<div class="modal-body">
+	<table class="table table-condensed">
+		<thead>
+			<tr>
+				<th></th>
+				<th>Type</th>
+				<th>Address</th>
+				<th>MAC</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr ng-repeat="network in networks">
+				<td>
+					<i ng-show="isOperatingOn(network)" class="fa fa-lg fa-fw fa-spinner fa-spin"></i>
+					<i ng-show="isUnmountable(network)" role="button" class="fa fa-lg fa-fw fa-unlink" title="Disconnect" ng-click="unmount(network)"></i>
+					<i ng-show="isMountable(network)" role="button" class="fa fa-lg fa-fw fa-link" title="Connect" ng-click="mount(network)"></i>
+				</td>
+				<td><i class="fa fa-lg fa-fw" ng-class="network.getIcon()"></i></td>
+				<td>{{network.interfacel}}</td>
+				<td>{{network.ipv4_address}}</td>
+				<td>{{network.mac_address}}</td>
+			</tr>
+		</tbody>
+	</table>
+</div>

@@ -3,15 +3,20 @@
 	<head>
 		<title>SoloWriter</title>
 		<link rel="icon" type="image/x-icon" href="favicon.ico">
-		<link rel="stylesheet" type="text/css" href="styles/lib/bootstrap.min.css">
-		<link rel="stylesheet" type="text/css" href="styles/lib/font-awesome.min.css">
+		<link rel="stylesheet" type="text/css" href="lib/styles/bootstrap.min.css">
+		<link rel="stylesheet" type="text/css" href="lib/styles/font-awesome.min.css">
 		<link rel="stylesheet" type="text/css" href="styles/solo.css">
-		<script type="text/javascript" src="scripts/lib/angular.min.js"></script>
-		<script type="text/javascript" src="scripts/lib/angular-touch.min.js"></script>
-		<script type="text/javascript" src="scripts/lib/angular-animate.min.js"></script>
-		<script type="text/javascript" src="scripts/lib/angular-idle.js"></script>
-		<script type="text/javascript" src="scripts/lib/ui-bootstrap-tpls-2.0.1.min.js"></script>
+		<script type="text/javascript" src="lib/scripts/angular.min.js"></script>
+		<script type="text/javascript" src="lib/scripts/angular-touch.min.js"></script>
+		<script type="text/javascript" src="lib/scripts/angular-animate.min.js"></script>
+		<script type="text/javascript" src="lib/scripts/angular-idle.js"></script>
+		<script type="text/javascript" src="lib/scripts/ui-bootstrap-tpls-2.0.1.min.js"></script>
 		<script type="text/javascript" src="scripts/solo.js"></script>
+		<script type="text/javascript" src="scripts/settings.js"></script>
+		<script type="text/javascript" src="scripts/lock.js"></script>
+		<script type="text/javascript" src="scripts/users.js"></script>
+		<script type="text/javascript" src="scripts/volumes.js"></script>
+		<script type="text/javascript" src="scripts/documents.js"></script>
 	</head>
 	<body ng-controller="SoloWriterCtrl">
 		<div ng-if="isLocked()" ng-controller="SlideShowCtrl" class="slideshow">
