@@ -32,9 +32,11 @@ class Volume
 			interface: @interface,
 			name: @name,
 			label: @label,
+			fstype: @fstype,
 			path: @path,
 			total_space: @total_space,
 			available_space: @available_space,
+			
 			mounted: mounted?,
 			can_mount: mountable?,
 			can_unmount: unmountable?,

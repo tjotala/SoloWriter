@@ -1,35 +1,21 @@
 require 'errors'
 
 class CloudVolume < Volume
-	TYPE = 'network'.freeze
+	INTERFACE = 'network'.freeze
+	TYPE = 'cloud'.freeze
 
 	@@volumes = Array.new
 
 	def initialize(opts = { })
 		super(opts.merge({
-			type: opts[:id],
-			interface: TYPE,
+			interface: INTERFACE,
+			fstype: TYPE,
 		}))
-	end
-
-	def enabled?
-		false
-	end
-
-	def mount
-		not_implemented
-	end
-
-	def unmount
-		not_implemented
 	end
 
 	class << self
 		def list
-			@@volumes.map do |cls|
-				volume = cls.new
-				volume.enabled? ? nil : volume
-			end.compact
+			@@volumes.map { |cls| cls.new }.select { |vol| vol.respond_to?(:mount) || vol.respond_to?(:unmount) }
 		end
 
 		def inherited(cls)
@@ -38,4 +24,4 @@ class CloudVolume < Volume
 	end
 end
 
-Dir[File.join('cloud', '*')].each { |file| require file }
+Dir[File.join(File.dirname(File.expand_path(__FILE__)), 'cloud', '*')].each { |file| require file }
