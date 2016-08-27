@@ -344,6 +344,7 @@ class SoloServer < Sinatra::Base
 	# @param filename
 	# @body document content
 	# @return 200 updated file record
+	# @return 403 file is locked
 	#
 	put '/api/volumes/:volume_id/files/:filename' do
 		json documents(params[:volume_id]).get(params[:filename]).create(request.body.read)

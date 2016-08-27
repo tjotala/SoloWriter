@@ -488,6 +488,20 @@ app.factory("Document", function($http, DEFAULT_DOCUMENT_NAME) {
 			return $http.delete(this.getPath(volume));
 		};
 
+		this.lock = function(volume) {
+			var self = this;
+			return $http.put(this.getPath(volume) + "/lock").then(function success(response) {
+				return self.setData(response.data);
+			});
+		};
+
+		this.unlock = function(volume) {
+			var self = this;
+			return $http.put(this.getPath(volume) + "/unlock").then(function success(response) {
+				return self.setData(response.data);
+			});
+		};
+
 		this.isDirty = function() {
 			return this.dirty;
 		};
@@ -514,7 +528,7 @@ app.factory("Document", function($http, DEFAULT_DOCUMENT_NAME) {
 	};
 });
 
-app.factory("Documents", function($http, $uibModal, Document) {
+app.factory("Documents", function($http, $uibModal, Document, MessageBox) {
 	var currentDocument = new Document();
 
 	return {
@@ -537,22 +551,35 @@ app.factory("Documents", function($http, $uibModal, Document) {
 		select: function() {
 			return $uibModal.open({
 				animation: false,
-				templateUrl: "docs.html",
-				controller: "DocumentsCtrl",
+				templateUrl: "open_doc.html",
+				controller: "OpenDocCtrl",
 				size: "lg"
 			}).result.then(function success(selected) {
-				return currentDocument.load(selected.volume, selected.doc.name);
+				return currentDocument.load(selected.volume, selected.doc.name).then(function success(doc) {
+					return doc;
+				}, function failure() {
+					MessageBox.error({
+						message: "Failed to open [" + selected.doc.name + "]"
+					});
+				});
 			});
 		},
 
 		save: function() {
+			var self = this;
 			return $uibModal.open({
 				animation: false,
 				templateUrl: "save_doc.html",
 				controller: "SaveDocCtrl",
 				size: "lg"
 			}).result.then(function success(selected) {
-				return currentDocument.save(selected.volume, selected.doc.name, false);
+				return currentDocument.save(selected.volume, selected.doc.name, false).then(function success(doc) {
+					return doc;
+				}, function failure() {
+					MessageBox.error({
+						message: "Failed to save as [" + selected.doc.name + "]"
+					});
+				});
 			});
 		}
 	};
@@ -797,7 +824,7 @@ app.controller("SoloWriterCtrl", function($scope, $window, $log, $http, $interva
 	$scope.startAutoSave();
 });
 
-app.controller("DocumentsCtrl", function ($scope, $uibModal, $uibModalInstance, Users, Volumes, Documents, MessageBox) {
+app.controller("OpenDocCtrl", function ($scope, $uibModal, $uibModalInstance, Users, Volumes, Documents, MessageBox) {
 	$scope.currentUser = Users.getCurrent();
 	$scope.currentVolume = Volumes.getCurrent();
 	$scope.documents = undefined;
@@ -832,6 +859,26 @@ app.controller("DocumentsCtrl", function ($scope, $uibModal, $uibModalInstance, 
 
 	$scope.selectDoc = function(doc) {
 		$uibModalInstance.close({ volume: Volumes.getCurrent(), doc: doc });
+	};
+
+	$scope.lockDoc = function(doc) {
+		doc.lock(Volumes.getCurrent()).then(function success(locked_doc) {
+			doc = locked_doc;
+		}, function failure() {
+			MessageBox.error({
+				message: "Failed to lock [" + doc.name + "]"
+			});
+		});
+	};
+
+	$scope.unlockDoc = function(doc) {
+		doc.unlock(Volumes.getCurrent()).then(function success(unlocked_doc) {
+			doc = unlocked_doc;
+		}, function failure() {
+			MessageBox.error({
+				message: "Failed to unlock [" + doc.name + "]"
+			});
+		});
 	};
 
 	$scope.deleteDoc = function(doc) {
@@ -880,7 +927,7 @@ app.controller("SaveDocCtrl", function ($scope, $uibModalInstance, $log, Users, 
 	};
 });
 
-app.controller("StorageCtrl", function ($scope, $uibModalInstance, $log, Volumes, MessageBox) {
+app.controller("StorageCtrl", function ($scope, $uibModalInstance, $log, $timeout, Volumes, MessageBox) {
 	$scope.volumes = undefined;
 	$scope.loading = true;
 

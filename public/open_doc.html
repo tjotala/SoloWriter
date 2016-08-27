@@ -17,7 +17,11 @@
 				<td ng-click="selectDoc(doc)">{{doc.name}}</td>
 				<td ng-click="selectDoc(doc)">{{doc.modified | date: 'short' }}</td>
 				<td ng-click="selectDoc(doc)">{{doc.size | bytes}}</td>
-				<td><i class="fa fa-lg fa-trash" role="button" ng-click="deleteDoc(doc)" title="Delete"></i></td>
+				<td>
+					<i class="fa fa-lg fa-lock" role="button" ng-show="!doc.locked" ng-click="lockDoc(doc)" title="Lock"></i>
+					<i class="fa fa-lg fa-unlock" role="button" ng-show="doc.locked" ng-click="unlockDoc(doc)" title="Unlock"></i>
+					<i class="fa fa-lg fa-trash" role="button" ng-show="!doc.locked" ng-click="deleteDoc(doc)" title="Delete"></i>
+				</td>
 			</tr>
 			<tr ng-switch-when="0">
 				<td colspan="4" class="text-center">No saved documents</td>

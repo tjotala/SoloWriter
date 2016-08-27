@@ -10,21 +10,35 @@ class Document
 	def create(content)
 		File.open(@path, 'w') { |f| f.write(content) }
 		self
+	rescue Errno::EACCES => e
+		forbidden
 	end
 
 	def remove
 		File.unlink(@path)
 		self
+	rescue Errno::ENOENT => e
+		not_found
+	rescue Errno::EACCES => e
+		forbidden
 	end
 
 	def lock
 		FileUtils.chmod('u=r,go=rr', @path)
 		self
+	rescue Errno::ENOENT => e
+		not_found
+	rescue Errno::EACCES => e
+		forbidden
 	end
 
 	def unlock
 		FileUtils.chmod('u=rw,go=rr', @path)
 		self
+	rescue Errno::ENOENT => e
+		not_found
+	rescue Errno::EACCES => e
+		forbidden
 	end
 
 	def to_json(*args)
