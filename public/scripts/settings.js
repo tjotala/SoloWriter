@@ -44,7 +44,7 @@ app.factory("Settings", function($window, $interpolate, $uibModal, CONTENT_ID, D
 		enabled: true,
 		min: 10, // px
 		max: 50, // px
-		step: 10, // px
+		step: 2, // px
 		units: "px",
 		default: parseFloat($window.getComputedStyle(getById(CONTENT_ID)).getPropertyValue("font-size")),
 		asStyle: function() { return { 'font-size': this.current + this.units, 'font-family': this.font }; },
