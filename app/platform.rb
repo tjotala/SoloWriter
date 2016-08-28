@@ -1,3 +1,5 @@
+require 'open3'
+
 module Platform
 	ROOT_PATH = File.expand_path(File.dirname(__FILE__)).freeze
 	LIB_PATH = File.expand_path(File.join(ROOT_PATH, 'lib')).freeze
@@ -22,6 +24,12 @@ module Platform
 	end
 
 	$LOAD_PATH.unshift(Platform::LIB_PATH, Platform::PLATFORM_PATH)
+
+	def self.run(cmd, ignore_errors = false)
+		out, err, status = Open3.capture3(cmd)
+		conflicted_resource(caller[0]) if status.to_i != 0 and !ignore_errors
+		out
+	end
 
 	def self.quit
 		Process.kill('TERM', Process.pid)
