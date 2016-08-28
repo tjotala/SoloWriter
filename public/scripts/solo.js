@@ -68,10 +68,14 @@ app.controller("SoloWriterCtrl", function($scope, $window, $log, $http, $interva
 
 	$scope.quit = function() {
 		$http.post("/api/quit");
+		$log.info("shutting down the browser");
+		$window.close(); // self-destruct this browser
 	};
 
 	$scope.shutdown = function() {
 		$http.post("/api/shutdown");
+		$log.info("shutting down the browser");
+		$window.close(); // self-destruct this browser
 	};
 
 	$scope.resetDoc = function(ask) {

@@ -1,13 +1,13 @@
 source 'https://rubygems.org'
 
-# general stuff
+# common gems
 gem 'promise'
 gem 'sinatra'
 gem 'sinatra-json'
 
 # development gems
-group :test
+group :test do
 	gem 'rake'
-	gem 'rspec', require: 'spec'
- 	gem 'fakefs', require: "fakefs/safe"
+	gem 'rspec'
+ 	gem 'fakefs'
 end

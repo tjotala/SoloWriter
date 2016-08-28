@@ -388,26 +388,40 @@ class SoloServer < Sinatra::Base
 	end
 
 	##
+	# Ping Server
+	#
+	# @method GET
+	# @return 200 ok
+	#
+	get '/api/ping' do
+		'ok'
+	end
+
+	##
 	# Quit Server
 	#
 	# @method POST
-	# @return 204 ok (will not return)
+	# @return 204 ok
 	#
 	post '/api/quit' do
-		settings.browser.shutdown
-		Platform::quit
-		status 204 # probably won't even get here
+		Thread.new do
+			sleep(2)
+			Platform::quit
+		end
+		status 204
 	end
 
 	##
 	# Shutdown Appliance
 	#
 	# @method POST
-	# @return 204 ok (will not return)
+	# @return 204 ok
 	#
 	post '/api/shutdown' do
-		settings.browser.shutdown
-		Platform::shutdown
-		status 204 # probably won't even get here
+		Thread.new do
+			sleep(2)
+			Platform::shutdown
+		end
+		status 204
 	end
 end
