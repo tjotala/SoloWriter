@@ -5,6 +5,7 @@ gem 'promise'
 gem 'OptionParser'
 gem 'sinatra'
 gem 'sinatra-json'
+gem 'mail'
 
 # development gems
 group :test do

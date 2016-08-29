@@ -59,7 +59,7 @@ end
 
 desc "Deploy package"
 task :deploy => :package do
-	ssh "mkdir -p ~/solo"
+	ssh "mkdir -p ~/solo/{users,docs}"
 	sh "scp #{PACKAGE} #{TARGET}:/tmp/#{File.basename(PACKAGE)}"
 	ssh "tar -C ~/solo --overwrite -xzvf /tmp/#{File.basename(PACKAGE)}"
 	ssh "rm /tmp/#{File.basename(PACKAGE)}"

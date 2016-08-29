@@ -25,7 +25,7 @@
 					<ng-checkbox ng-model="autoSaveTime.enabled"> Enable</ng-checkbox>
 					<span class="pull-right" ng-show="autoSaveTime.enabled">Every {{autoSaveTime.current}} {{autoSaveTime.units}}</span>
 					<div ng-show="autoSaveTime.enabled">
-						<input type="range" ng-model="autoSaveTime.current" min="{{autoSaveTime.min}}" max="{{autoSaveTime.max}}" step="{{autoSaveTime.step}}" autofocus></input>
+						<input type="range" ng-model="autoSaveTime.current" min="{{autoSaveTime.min}}" max="{{autoSaveTime.max}}" step="{{autoSaveTime.step}}"></input>
 						<ng-checkbox ng-model="autoSaveName.enabled"> Use Temporary Name: <samp>{{autoSaveName.pattern}}</samp></ng-checkbox>
 					</div>
 				</td>
@@ -38,7 +38,7 @@
 					<ng-checkbox ng-model="lockScreenTime.enabled"> Enable</ng-checkbox>
 					<span class="pull-right" ng-show="lockScreenTime.enabled">In {{lockScreenTime.current}} {{lockScreenTime.units}}</span>
 					<div ng-show="lockScreenTime.enabled">
-						<input type="range" ng-model="lockScreenTime.current" min="{{lockScreenTime.min}}" max="{{lockScreenTime.max}}" step="{{lockScreenTime.step}}" autofocus></input>
+						<input type="range" ng-model="lockScreenTime.current" min="{{lockScreenTime.min}}" max="{{lockScreenTime.max}}" step="{{lockScreenTime.step}}"></input>
 					</div>
 				</td>
 			</tr>
@@ -50,7 +50,7 @@
 					<ng-checkbox ng-model="lockScreenInterval.enabled"> Enable</ng-checkbox>
 					<span class="pull-right" ng-show="lockScreenInterval.enabled">Every {{lockScreenInterval.current}} {{lockScreenInterval.units}}</span>
 					<div ng-show="lockScreenInterval.enabled">
-						<input type="range" ng-model="lockScreenInterval.current" min="{{lockScreenInterval.min}}" max="{{lockScreenInterval.max}}" step="{{lockScreenInterval.step}}" autofocus></input>
+						<input type="range" ng-model="lockScreenInterval.current" min="{{lockScreenInterval.min}}" max="{{lockScreenInterval.max}}" step="{{lockScreenInterval.step}}"></input>
 					</div>
 				</td>
 			</tr>

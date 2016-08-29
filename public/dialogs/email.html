@@ -1,0 +1,32 @@
+<div class="modal-header bg-primary">
+	<h4 class="modal-title pull-left">Send Email</h4>
+	<i class="fa fa-2x fa-close pull-right vertical-center" role="button" ng-click="cancel()"></i>
+</div>
+<div class="modal-body">
+	<form class="form-horizontal" ng-submit="ok()">
+		<div class="form-group">
+			<label for="sender" class="col-sm-3 control-label">Username</label>
+			<div class="col-sm-9">
+				<input type="email" class="form-control" placeholder="Enter sender" ng-minlength="5" ng-model="sender" ng-enter="ok()" ng-required autofocus></input>
+			</div>
+		</div>
+		<div class="form-group">
+			<label for="password" class="col-sm-3 control-label">Password</label>
+			<div class="col-sm-9">
+				<input type="password" class="form-control" placeholder="Enter password" ng-minlength="3" ng-model="password" ng-required ng-enter="ok()"></input>
+			</div>
+		</div>
+		<div class="form-group">
+			<label for="recipient" class="col-sm-3 control-label">Recipient</label>
+			<div class="col-sm-9">
+				<input type="email" class="form-control" placeholder="{{sender}}" ng-model="recipient" ng-enter="ok()"></input>
+			</div>
+		</div>
+		<div class="form-group">
+			<label for="subject" class="col-sm-3 control-label">Subject</label>
+			<div class="col-sm-9">
+				<input type="text" class="form-control" placeholder="Enter subject" ng-minlength="1" ng-model="subject" ng-enter="ok()"></input>
+			</div>
+		</div>
+	</form>
+</div>

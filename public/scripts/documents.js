@@ -10,7 +10,7 @@ app.factory("Document", function($http, DEFAULT_DOCUMENT_NAME) {
 			return volume.getPath() + "files/" + encodeURIComponent(angular.isDefined(newName) ? newName : this.name);
 		};
 
-		this.getName = function() {
+		this.getSafeName = function() {
 			return angular.isDefined(this.name) ? this.name : DEFAULT_DOCUMENT_NAME;
 		};
 
@@ -49,6 +49,18 @@ app.factory("Document", function($http, DEFAULT_DOCUMENT_NAME) {
 					return self.clearDirty();
 				}
 			});
+		};
+
+		this.send = function(email) {
+			var self = this;
+			var body = {
+				sender: email.sender,
+				password: email.password,
+				recipient: email.recipient || email.sender,
+				subject: email.subject || self.getSafeName() || "Your Document",
+				content: self.content
+			};
+			return $http.post("/api/send", body);
 		};
 
 		this.remove = function(volume) {
@@ -95,7 +107,7 @@ app.factory("Document", function($http, DEFAULT_DOCUMENT_NAME) {
 	};
 });
 
-app.factory("Documents", function($http, $uibModal, Document, MessageBox) {
+app.factory("Documents", function($http, $uibModal, Document, MessageBox, Email) {
 	var currentDocument = new Document();
 
 	return {
@@ -145,6 +157,27 @@ app.factory("Documents", function($http, $uibModal, Document, MessageBox) {
 				}, function failure() {
 					MessageBox.error({
 						message: "Failed to save as [" + selected.doc.name + "]"
+					});
+				});
+			});
+		},
+
+		send: function() {
+			var self = this;
+			var default_email = {
+				sender: undefined,
+				password: undefined,
+				recipient: undefined,
+				subject: "Document: " + currentDocument.getSafeName()
+			};
+			return Email.address(default_email).then(function success(email) {
+				return currentDocument.send(email).then(function success() {
+					MessageBox.success({
+						message: "Sent [" + currentDocument.getSafeName() + "] to [" + email.recipient + "]"
+					});
+				}, function failure() {
+					MessageBox.error({
+						message: "Failed to send [" + currentDocument.getSafeName() + "] to [" + email.recipient + "]"
 					});
 				});
 			});

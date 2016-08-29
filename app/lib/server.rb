@@ -1,4 +1,5 @@
 require 'json'
+require 'mail'
 
 require 'errors'
 require 'users'
@@ -432,6 +433,42 @@ class SoloServer < Sinatra::Base
 	#
 	put '/api/volumes/:volume_id/files/:filename/unlock' do
 		json documents(params[:volume_id]).get(params[:filename]).unlock
+	end
+
+	##
+	# Send Email
+	#
+	# @method POST
+	# @param sender
+	# @param password
+	# @param recipient
+	# @param subject
+	# @param content
+	# @return 200 ok
+	#
+	post '/api/send' do
+		begin
+			mail = Mail.new({
+				from: @request_json[:sender],
+				to: @request_json[:recipient],
+				subject: @request_json[:subject],
+				body: @request_json[:content]
+			})
+			mail.header['X-Sent-From'] = Platform::PRODUCT_FULLNAME
+			options = {
+				address: "smtp.gmail.com",
+	            port: 587,
+	            domain: 'tjotala.com',
+	            user_name: @request_json[:sender],
+	            password: @request_json[:password],
+	            authentication: 'plain',
+	            enable_starttls_auto: true
+	        }
+			mail.delivery_method :smtp, options
+			mail.deliver
+		rescue NoMethodError => e # this would be typically if we de-ref the @request_json with a key that's not defined
+			bad_request("missing field(s)")
+		end
 	end
 
 	##

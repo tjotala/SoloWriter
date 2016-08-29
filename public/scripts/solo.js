@@ -81,7 +81,7 @@ app.controller("SoloWriterCtrl", function($scope, $window, $log, $http, $interva
 	$scope.resetDoc = function(ask) {
 		if (ask && Documents.getCurrent().isDirty()) {
 			MessageBox.confirm({
-				name: Documents.getCurrent().name
+				name: Documents.getCurrent().getSafeName()
 			}).then(function ok() {
 				$scope.resetDoc(false); // call myself without prompting
 			});
@@ -118,6 +118,12 @@ app.controller("SoloWriterCtrl", function($scope, $window, $log, $http, $interva
 
 	$scope.saveDoc = function() {
 		Documents.save().finally(function() {
+			setFocus(CONTENT_ID);
+		});
+	};
+
+	$scope.sendDoc = function() {
+		Documents.send().finally(function() {
 			setFocus(CONTENT_ID);
 		});
 	};
@@ -161,7 +167,7 @@ app.controller("SoloWriterCtrl", function($scope, $window, $log, $http, $interva
 	$scope.autoSave = function() {
 		if (Documents.getCurrent().shouldSave() && Settings.getAutoSaveTime().enabled) {
 			$log.info(now8601() + " -- autosaving");
-			Documents.getCurrent().save(Volumes.getCurrent(), Settings.getAutoSaveName().name(Documents.getCurrent().getName()), true);
+			Documents.getCurrent().save(Volumes.getCurrent(), Settings.getAutoSaveName().name(Documents.getCurrent().getSafeName()), true);
 		} else {
 			$log.debug(now8601() + " -- skipped autosave, nothing to save");
 		}
@@ -251,7 +257,7 @@ app.service("MessageBox", function($uibModal) {
 			animation: false,
 			templateUrl: "dialogs/messagebox.html",
 			controller: "MessageBoxCtrl",
-			size: "sm",
+			size: "md",
 			resolve: {
 				options: function() {
 					return options;

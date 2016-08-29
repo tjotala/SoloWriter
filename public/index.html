@@ -19,6 +19,7 @@
 		<script type="text/javascript" src="scripts/volumes.js"></script>
 		<script type="text/javascript" src="scripts/networks.js"></script>
 		<script type="text/javascript" src="scripts/documents.js"></script>
+		<script type="text/javascript" src="scripts/email.js"></script>
 	</head>
 	<body ng-controller="SoloWriterCtrl">
 		<div ng-show="isLocked()" ng-controller="SlideShowCtrl" class="slideshow">
@@ -38,6 +39,7 @@
 				<button class="btn btn-warning navbar-btn" ng-click="resetDoc(true)"><i class="fa fa-lg fa-file-text-o"></i>&nbsp;New</button>
 				<button class="btn btn-success navbar-btn" ng-click="openDoc(true)"><i class="fa fa-lg fa-folder-open-o"></i>&nbsp;Open</button>
 				<button class="btn btn-primary navbar-btn" ng-click="saveDoc()" ng-disabled="!currentDocument.canSave()"><i class="fa fa-lg fa-save"></i>&nbsp;Save</button>
+				<button class="btn btn-primary navbar-btn" ng-click="sendDoc()"><i class="fa fa-lg fa-send"></i>&nbsp;Send</button>
 			</div>
 			<div class="pull-right">
 				<button class="btn btn-primary navbar-btn" ng-click="selectSettings()"><i class="fa fa-lg fa-gear"></i>&nbsp;Settings</button>
