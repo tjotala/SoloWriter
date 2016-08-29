@@ -2,6 +2,7 @@ source 'https://rubygems.org'
 
 # common gems
 gem 'promise'
+gem 'OptionParser'
 gem 'sinatra'
 gem 'sinatra-json'
 
