@@ -7,7 +7,7 @@ class LocalVolume < Volume
 		super({
 			id: ID,
 			interface: promise { RemovableVolume::get_interface(@path) },
-			name: 'SoloWriter',
+			name: Platform::PRODUCT_NAME,
 			fstype: promise { RemovableVolume::get_file_system(@path) },
 			path: Platform::DOCS_PATH,
 			total_space: promise { RemovableVolume::get_total_space(@path) },

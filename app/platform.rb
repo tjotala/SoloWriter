@@ -8,6 +8,10 @@ module Platform
 	DOCS_PATH = File.expand_path(File.join(ROOT_PATH, '..', 'docs')).freeze
 	USERS_PATH = File.expand_path(File.join(ROOT_PATH, '..', 'users')).freeze
 
+	PRODUCT_NAME = 'SoloWriter'.freeze
+	PRODUCT_VERSION = '1.0'.freeze
+	PRODUCT_FULLNAME = "#{PRODUCT_NAME}/#{PRODUCT_VERSION}".freeze
+
 	def self.pi?
 		RUBY_PLATFORM == 'arm-linux-gnueabihf'
 	end
@@ -17,12 +21,13 @@ module Platform
 	end
 
 	if pi?
+		PLATFORM_TYPE = 'pi'.freeze
 		LOGS_PATH = File.join(File::SEPARATOR, 'var', 'log', 'solo').freeze
-		PLATFORM_PATH = File.join(LIB_PATH, 'pi').freeze
 	else
+		PLATFORM_TYPE = 'pc'.freeze
 		LOGS_PATH = File.expand_path(ENV['TEMP'] || ENV['TMP']).freeze
-		PLATFORM_PATH = File.join(LIB_PATH, 'pc').freeze
 	end
+	PLATFORM_PATH = File.join(LIB_PATH, PLATFORM_TYPE).freeze
 
 	$LOAD_PATH.unshift(Platform::LIB_PATH, Platform::PLATFORM_PATH)
 

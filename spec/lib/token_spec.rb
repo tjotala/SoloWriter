@@ -6,7 +6,7 @@ describe Token do
 	it "should create new valid token" do
 		token = Token.create(uuid)
 		expect( token ).to be_a(Token)
-		expect( token.id ).to be_a_uuid
+		expect( token.id ).to be_uuid
 		expect( token.id ).to eq(uuid)
 		expect( token.created.utc? ).to be true
 		expect( token.created.subsec ).to be == 0

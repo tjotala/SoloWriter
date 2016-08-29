@@ -18,7 +18,7 @@ class Networks
 		end
 	end
 
-	def wireless
-		[ 'fake' ]
+	def scan_wireless(interface)
+		[ ] # got nuthin' right now
 	end
 end

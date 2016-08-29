@@ -16,9 +16,27 @@ class Uuid
 	end
 end
 
-RSpec::Matchers.define :be_a_uuid do
+RSpec::Matchers.define :be_frozen do
+	match do |actual|
+		actual.frozen?
+	end
+end
+
+RSpec::Matchers.define :be_uuid do
 	match do |actual|
 		Uuid::valid?(actual)
+	end
+end
+
+RSpec::Matchers.define :be_readable_path do
+	match do |actual|
+		Dir.exist?(actual) && File.readable?(actual)
+	end
+end
+
+RSpec::Matchers.define :be_writable_path do
+	match do |actual|
+		Dir.exist?(actual) && File.writable?(actual)
 	end
 end
 

@@ -24,7 +24,7 @@ describe User do
 		it "should result in a valid new user" do
 			now = Time.now.utc
 			delay
-			expect( user.id.to_s ).to be_a_uuid
+			expect( user.id.to_s ).to be_uuid
 			expect( user.username.to_s ).to eq("thor")
 			expect( user.password ).not_to be_nil
 			expect( user.modified ).to be > now
