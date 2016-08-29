@@ -11,18 +11,20 @@ class Network
 	attr_reader :ssid
 	attr_reader :encryption
 	attr_reader :quality
+	attr_reader :known
 
 	def initialize(opts = { })
 		@interface = opts[:interface] or missing_argument(:interface)
 		@type = opts[:type] or missing_argument(:type)
-		@mac_address = opts[:mac_address] || nil
-		@ipv4_address = opts[:ipv4_address] || nil
-		@ipv6_address = opts[:ipv6_address] || nil
-		@broadcast_address = opts[:broadcast_address] || nil
-		@netmask = opts[:netmask] || nil
-		@ssid = opts[:ssid] || nil
-		@encryption = opts[:encryption] || false
-		@quality = opts[:quality] || 0
+		@mac_address = opts[:mac_address]
+		@ipv4_address = opts[:ipv4_address]
+		@ipv6_address = opts[:ipv6_address]
+		@broadcast_address = opts[:broadcast_address]
+		@netmask = opts[:netmask]
+		@ssid = opts[:ssid]
+		@encryption = opts[:encryption]
+		@quality = opts[:quality]
+		@known = opts[:known]
 	end
 
 	def to_json(*args)
@@ -37,6 +39,7 @@ class Network
 			ssid: @ssid,
 			encryption: @encryption,
 			quality: @quality,
-		}.to_json(args)
+			known: @known,
+		}.select { |k, v| !v.nil? }.to_json(args)
 	end
 end

@@ -58,7 +58,7 @@ class User
 			username: @username.to_s,
 			modified: @modified.nil? ? nil : @modified.iso8601,
 			loggedin: @loggedin.nil? ? nil : @loggedin.iso8601,
-		}.to_json(args)
+		}.select { |k, v| v }.to_json(args)
 	end
 
 	def <=>(other)

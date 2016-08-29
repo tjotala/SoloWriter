@@ -49,6 +49,6 @@ class Document
 			created: stat.ctime.iso8601,
 			modified: stat.mtime.iso8601,
 			locked: !stat.writable?,
-		}.to_json(args)
+		}.select { |k, v| v }.to_json(args)
 	end
 end

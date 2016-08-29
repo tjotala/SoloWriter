@@ -91,7 +91,7 @@ describe User do
 
 		it "should encode to minimal public JSON" do
 			json = JSON.parse(user.to_json)
-			expect( json.keys ).to contain_exactly('id', 'username', 'modified', 'loggedin')
+			expect( json.keys ).to contain_exactly('id', 'username', 'modified') # should exclude 'loggedin' since we've never logged in
 			expect( json['username'] ).to eq("thor")
 		end
 

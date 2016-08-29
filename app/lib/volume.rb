@@ -40,7 +40,7 @@ class Volume
 			mounted: mounted?,
 			can_mount: mountable?,
 			can_unmount: unmountable?,
-		}.to_json(args)
+		}.select { |k, v| v }.to_json(args)
 	end
 
 	def mounted?
