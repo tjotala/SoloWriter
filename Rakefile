@@ -104,7 +104,7 @@ end # namespace :target
 namespace :prep do
 
 	desc "Prepare the target Raspberry Pi from Jessie Lite"
-	task :lite => [ :ssh, :cleanup, :update, :network, :ntp, :ntfs, :ruby, :xwindows, :fonts, :wm, :kweb, :app ]
+	task :lite => [ :ssh, :cleanup, :update, :network, :wpa_us, :ntp, :ntfs, :ruby, :xwindows, :fonts, :wm, :kweb, :app ]
 
 	desc "Install your SSH key"
 	task :ssh do
@@ -125,7 +125,12 @@ namespace :prep do
 
 	desc "Configure the network interfaces for DHCP"
 	task :network do
-		ssh "sudo \"sed -i -e 's/inet manual/inet dhcp/;s/iface eth0 inet dhcp/allow-hotplug eth0\\niface eth0 inet dhcp\\n\\nallow-hotplug eth1\\niface eth1 inet dhcp/' /etc/network/interfaces\""
+		ssh "sudo " + "sed -i -e 's/inet manual/inet dhcp/;s/iface eth0 inet dhcp/allow-hotplug eth0\\niface eth0 inet dhcp\\n\\nallow-hotplug eth1\\niface eth1 inet dhcp/' /etc/network/interfaces".quoted
+	end
+
+	desc "Configure WiFi for US"
+	task :wpa_us do
+		ssh "sudo " + "sed -i -e 's/country=GB/country=US/' /etc/wpa_supplicant/wpa_supplicant.conf".quoted
 	end
 
 	desc "Install and configure NTP"
