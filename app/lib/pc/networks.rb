@@ -4,7 +4,7 @@ require 'errors'
 require 'network'
 
 class Networks
-	def active
+	def available
 		Socket.getifaddrs.reject { |ifaddr| ifaddr.flags & Socket::IFF_UP == 0 || ifaddr.addr.nil? || !ifaddr.addr.ipv4? || ifaddr.addr.ipv4_loopback? }.map do |ifaddr|
 			Network.new({
 				interface: ifaddr.name,

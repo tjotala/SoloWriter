@@ -7,23 +7,25 @@
 	<table class="table table-condensed">
 		<thead>
 			<tr>
-				<th></th>
 				<th>Type</th>
-				<th>Address</th>
+				<th>Interface</th>
+				<th>IP Address</th>
 				<th>MAC</th>
+				<th>Actions</th>
 			</tr>
 		</thead>
 		<tbody>
 			<tr ng-repeat="network in networks">
-				<td>
-					<i ng-show="isOperatingOn(network)" class="fa fa-lg fa-fw fa-spinner fa-spin"></i>
-					<i ng-show="isUnmountable(network)" role="button" class="fa fa-lg fa-fw fa-unlink" title="Disconnect" ng-click="unmount(network)"></i>
-					<i ng-show="isMountable(network)" role="button" class="fa fa-lg fa-fw fa-link" title="Connect" ng-click="mount(network)"></i>
-				</td>
 				<td><i class="fa fa-lg fa-fw" ng-class="network.getIcon()"></i></td>
-				<td>{{network.interfacel}}</td>
-				<td>{{network.ipv4_address}}</td>
-				<td>{{network.mac_address}}</td>
+				<td>{{network.interface}}</td>
+				<td class="ip_address">{{network.ipv4_address}}</td>
+				<td class="mac_address">{{network.mac_address}}</td>
+				<td>
+					<i class="fa fa-lg fa-fw fa-spinner fa-spin" ng-show="isOperatingOn(network)"></i>
+					<i class="fa fa-lg fa-fw fa-link" role="button" title="Connect" ng-show="network.isConnectable() && !isOperatingOn(network)" ng-click="connect(network)"></i>
+					<i class="fa fa-lg fa-fw fa-unlink" role="button" title="Disconnect" ng-show="network.isDisconnectable() && !isOperatingOn(network)" ng-click="disconnect(network)"></i>
+					<i class="fa fa-lg fa-fw fa-refresh" role="button" title="Switch" ng-show="network.isDisconnectable() && network.isWireless() && !isOperatingOn(network)" ng-click="connect(network)"></i>
+				</td>
 			</tr>
 		</tbody>
 	</table>

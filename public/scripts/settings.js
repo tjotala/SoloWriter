@@ -156,7 +156,7 @@ app.factory("Settings", function($window, $interpolate, $uibModal, CONTENT_ID, D
 	};
 });
 
-app.controller("SettingsCtrl", function ($scope, $uibModalInstance, $log, Settings, Volumes) {
+app.controller("SettingsCtrl", function ($scope, $uibModalInstance, $log, Settings, Volumes, Networks) {
 	$scope.textSize = Settings.getTextSize();
 	$scope.autoSaveTime = Settings.getAutoSaveTime().asMin();
 	$scope.autoSaveName = Settings.getAutoSaveName();
@@ -172,6 +172,10 @@ app.controller("SettingsCtrl", function ($scope, $uibModalInstance, $log, Settin
 
 	$scope.selectStorage = function() {
 		Volumes.select();
+	};
+
+	$scope.selectNetwork = function() {
+		Networks.select();
 	};
 
 	$scope.ok = function() {

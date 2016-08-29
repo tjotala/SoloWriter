@@ -89,3 +89,8 @@ html {
 .slideshow img {
 	margin: auto;
 }
+
+.ip_address, .mac_address {
+	font-family: monospace;
+	text-transform: uppercase;
+}

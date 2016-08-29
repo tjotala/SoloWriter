@@ -294,23 +294,70 @@ class SoloServer < Sinatra::Base
 	end
 
 	##
-	# List Active Networks
+	# List Available Networks
 	#
 	# @method GET
-	# @return 200 list of active networks
+	# @return 200 list of available networks
 	#
-	get '/api/networks/active/?' do
-		json settings.networks.active
+	get '/api/networks/available/?' do
+		json settings.networks.available
 	end
 
 	##
-	# List Wireless Networks
+	# Scan Wireless Networks
 	#
 	# @method GET
+	# @return 200 list of nearby wireless networks
+	#
+	get '/api/networks/:interface/scan/?' do
+		json settings.networks.scan_wireless(params[:interface])
+	end
+
+	##
+	# Connect Wireless Network
+	#
+	# @method POST
+	# @param interface
+	# @param ssid
+	# @param password
+	# @return 200 network status
+	#
+	post '/api/networks/:interface/connect/?' do
+		json settings.networks.connect(params[:interface], @request_json[:ssid], @request_json[:password])
+	end
+
+	##
+	# Disconnect Wireless Network
+	#
+	# @method POST
+	# @param interface
+	# @return 200 network status
+	#
+	post '/api/networks/:interface/disconnect/?' do
+		json settings.networks.disconnect(params[:interface])
+	end
+
+	##
+	# List Known Wireless Networks
+	#
+	# @method POST
+	# @param interface
 	# @return 200 list of wireless networks
 	#
-	get '/api/networks/wireless/?' do
-		json settings.networks.wireless
+	post '/api/networks/:interface/known/?' do
+		json settings.networks.list_known(params[:interface])
+	end
+
+	##
+	# Forget Wireless Network
+	#
+	# @method POST
+	# @param interface
+	# @param ssid
+	# @return 200 network status
+	#
+	post '/api/networks/:interface/forget/?' do
+		json settings.networks.forget_known(params[:interface], @request_json[:ssid])
 	end
 
 	##

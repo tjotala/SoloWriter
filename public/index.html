@@ -14,12 +14,14 @@
 		<script type="text/javascript" src="scripts/solo.js"></script>
 		<script type="text/javascript" src="scripts/settings.js"></script>
 		<script type="text/javascript" src="scripts/lock.js"></script>
+		<script type="text/javascript" src="scripts/password.js"></script>
 		<script type="text/javascript" src="scripts/users.js"></script>
 		<script type="text/javascript" src="scripts/volumes.js"></script>
+		<script type="text/javascript" src="scripts/networks.js"></script>
 		<script type="text/javascript" src="scripts/documents.js"></script>
 	</head>
 	<body ng-controller="SoloWriterCtrl">
-		<div ng-if="isLocked()" ng-controller="SlideShowCtrl" class="slideshow">
+		<div ng-show="isLocked()" ng-controller="SlideShowCtrl" class="slideshow">
 			<div uib-carousel interval="interval" active="active" no-pause="true" no-wrap="false">
 				<div uib-slide ng-repeat="slide in slides" index="$index">
 					<img ng-src="{{slide.image}}">

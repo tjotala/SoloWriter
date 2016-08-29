@@ -2,23 +2,19 @@ require 'errors'
 
 class RemovableVolume < Volume
 	def mount
-		self.class.run("sudo mkdir -p /media/usb")
-		self.class.run("sudo chown -R pi:pi /media/usb")
-		self.class.run("sudo mount -o uid=pi,gid=pi,rw,noatime,nodiratime,noexec,sync,dirsync,flush UUID=#{@id} /media/usb")
+		Platform::run("sudo mkdir -p /media/usb")
+		Platform::run("sudo chown -R pi:pi /media/usb")
+		Platform::run("sudo mount -o uid=pi,gid=pi,rw,noatime,nodiratime,noexec,sync,dirsync,flush UUID=#{@id} /media/usb")
 		update(self.class.get(@id))
 	end
 
 	def unmount
-		self.class.run("sudo umount UUID=#{@id}")
-		self.class.run("sudo rmdir /media/usb")
+		Platform::run("sudo umount UUID=#{@id}")
+		Platform::run("sudo rmdir /media/usb")
 		update(self.class.get(@id))
 	end
 
 	class << self
-		def run(cmd)
-			conflicted_resource(caller[0]) unless system(cmd)
-		end
-
 		def parse(vol)
 			path = vol[/MOUNTPOINT="([^"]*)"/, 1]
 			{
@@ -34,13 +30,13 @@ class RemovableVolume < Volume
 		end
 
 		def list
-			%x[sudo lsblk --nodeps --output NAME,MOUNTPOINT,LABEL,UUID,SIZE,TYPE,FSTYPE --bytes --paths --pairs `readlink -f /dev/disk/by-id/usb*` | grep part].split("\n").map do |vol|
+			Platform::run("sudo lsblk --nodeps --output NAME,MOUNTPOINT,LABEL,UUID,SIZE,TYPE,FSTYPE --bytes --paths --pairs `readlink -e /dev/disk/by-id/usb*` | grep part", true).each_line.map do |vol|
 				self.new(parse(vol))
 			end
 		end
 
 		def get(id)
-			parse(%x[sudo lsblk --nodeps --output NAME,MOUNTPOINT,LABEL,UUID,SIZE,TYPE,FSTYPE --bytes --paths --pairs `readlink -f /dev/disk/by-uuid/#{id}`].chomp.strip)
+			parse(Platform::run("sudo lsblk --nodeps --output NAME,MOUNTPOINT,LABEL,UUID,SIZE,TYPE,FSTYPE --bytes --paths --pairs `readlink -e /dev/disk/by-uuid/#{id}`", true))
 		end
 
 		def get_interface(path)

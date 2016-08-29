@@ -1,0 +1,38 @@
+<div class="modal-header bg-success">
+	<h4 class="modal-title pull-left">Nearby Wireless Networks</h4>
+	<i role="button" class="fa fa-2x fa-close pull-right" ng-click="cancel()"></i>
+	<i class="fa fa-2x fa-spinner fa-spin pull-right" ng-show="loading"></i>
+</div>
+<div class="modal-body">
+	<table class="table table-condensed">
+		<thead>
+			<tr>
+				<th></th>
+				<th>SSID</th>
+				<th>Quality</th>
+				<th>MAC</th>
+				<th>Actions</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr ng-repeat="network in networks | orderBy : network.quality : reverse">
+				<td>
+					<i ng-show="network.encryption" class="fa fa-lg fa-fw fa-lock" title="Secure"></i>
+					<i ng-hide="network.encryption" class="fa fa-lg fa-fw fa-unlock" title="Public"></i>
+				</td>
+				<td>{{network.ssid}}</td>
+				<td>
+					<div class="progress">
+						<div class="progress progress-bar" role="progressbar" style="min-width: 2em;" ng-style="{ width: network.quality + '%' }">{{network.quality}}%</div>
+					</div>
+				</td>
+				<td class="mac_address">{{network.mac_address}}</td>
+				<td>
+					<i class="fa fa-lg fa-fw fa-spinner fa-spin" ng-show="isOperatingOn(network)"></i>
+					<i class="fa fa-lg fa-fw fa-link" role="button" title="Connect" ng-show="network.isConnectable() && !isOperatingOn(network)" ng-click="connect(network)"></i>
+					<i class="fa fa-lg fa-fw fa-trash" role="button" title="Forget" ng-show="network.isForgettable() && !isOperatingOn(network)" ng-click="forget(network)"></i>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+</div>
