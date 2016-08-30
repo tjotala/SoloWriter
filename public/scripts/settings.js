@@ -85,7 +85,7 @@ app.factory("Settings", function($window, $interpolate, $uibModal, CONTENT_ID, D
 	});
 
 	var backgroundImage = true;
-	var devMode = true;  // true = development mode, false = not development mode
+	var devMode = false;  // true = development mode, false = not development mode
 
 	return {
 		isDevelopment: function() {
