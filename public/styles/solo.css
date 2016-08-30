@@ -62,7 +62,7 @@ html {
 }
 
 .modal-body {
-	max-height: 300px !important;
+	max-height: 290px !important; /* accommodates modal-header + modal-body + modal-footer */
 	overflow-y: auto !important;
 }
 
