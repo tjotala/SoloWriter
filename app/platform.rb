@@ -42,7 +42,7 @@ module Platform
 	end
 
 	def self.shutdown
-		exec("sudo shutdown -h now") if pi?
+		exec("sudo \"sync; shutdown -h now\"") if pi?
 	end
 
 	def self.which(cmd)
