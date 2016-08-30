@@ -131,6 +131,47 @@ class SoloServer < Sinatra::Base
 		send_file(File.join(settings.public_folder, 'index.html'))
 	end
 
+	def get_slideshow_sets
+		Dir[File.join(Platform::PUBLIC_PATH, 'images', 'slides', '*')].map do |dir|
+			set = File.basename(dir)
+			{
+				id: set,
+				name: set.capitalize,
+				count: get_slideshow_images(set).length,
+				license: "/images/slides/#{set}/LICENSE",
+			}
+		end
+	end
+
+	def get_slideshow_images(set)
+		Dir[File.join(Platform::PUBLIC_PATH, 'images', 'slides', set, '*.{jpg,jpeg,gif,png}')].map do |file|
+			{
+				image: "/images/slides/#{set}/#{File.basename(file)}"
+			}
+		end
+	end
+
+	##
+	# Get Slideshow Sets
+	#
+	# @method GET
+	# @return 200 list of image sets
+	#
+	get '/api/slides/?' do
+		json get_slideshow_sets
+	end
+
+	##
+	# Get Slideshow Images
+	#
+	# @method GET
+	# @return 200 list of random images
+	#
+	get '/api/slides/:set/?' do
+		set = params[:set]
+		json get_slideshow_images(set).shuffle
+	end
+
 	##
 	# Get Configuration
 	#

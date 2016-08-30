@@ -297,16 +297,15 @@ app.controller("MessageBoxCtrl", function ($scope, $uibModalInstance, $timeout, 
 	};
 });
 
-app.controller("SlideShowCtrl", function ($scope, Settings) {
+app.controller("SlideShowCtrl", function ($scope, $http, Settings) {
 	$scope.interval = Settings.getLockScreenInterval().asMs().current;
 	$scope.active = 0;
-
 	$scope.slides = [ ];
-	for(var i = 1; i <= 60; ++i) {
-		$scope.slides.push({
-			image: "/images/slides/slide-" + i + ".jpg"
-		});
-	}
+
+	var set = Settings.getLockScreenSet();
+	Settings.getLockScreenImages(set).then(function success(images) {
+		$scope.slides = images;
+	});
 });
 
 app.filter("bytes", function() {

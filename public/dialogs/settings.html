@@ -51,6 +51,9 @@
 					<span class="pull-right" ng-show="lockScreenInterval.enabled">Every {{lockScreenInterval.current}} {{lockScreenInterval.units}}</span>
 					<div ng-show="lockScreenInterval.enabled">
 						<input type="range" ng-model="lockScreenInterval.current" min="{{lockScreenInterval.min}}" max="{{lockScreenInterval.max}}" step="{{lockScreenInterval.step}}"></input>
+						<div>
+							Image Set:&nbsp;<select style="width: 40%; display: inline" ng-options="set as (set.name + ' (' + set.count + ' images)') for set in lockScreenSets track by set.id" ng-model="lockScreenSet"></select>
+						</div>
 					</div>
 				</td>
 			</tr>

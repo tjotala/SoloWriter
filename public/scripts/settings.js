@@ -38,7 +38,7 @@ function RangeOption(values) {
 	return this;
 }
 
-app.factory("Settings", function($window, $interpolate, $uibModal, CONTENT_ID, DEFAULT_DOCUMENT_NAME) {
+app.factory("Settings", function($window, $interpolate, $uibModal, $http, CONTENT_ID, DEFAULT_DOCUMENT_NAME) {
 
 	var textSize = new RangeOption({
 		enabled: true,
@@ -83,6 +83,7 @@ app.factory("Settings", function($window, $interpolate, $uibModal, CONTENT_ID, D
 		default: 10 * 1000, // ms
 		setFrom: function(other) { this.enabled = other.enabled; this.current = other.current; }
 	});
+	var lockScreenSet = "family";
 
 	var backgroundImage = true;
 	var devMode = false;  // true = development mode, false = not development mode
@@ -137,6 +138,23 @@ app.factory("Settings", function($window, $interpolate, $uibModal, CONTENT_ID, D
 			lockScreenInterval.setFrom(other);
 		},
 
+		getLockScreenSet: function() {
+			return lockScreenSet;
+		},
+		setLockScreenSet: function(other) {
+			lockScreenSet = other;
+		},
+		getLockScreenSets: function() {
+			return $http.get("/api/slides/").then(function success(response) {
+				return response.data;
+			});
+		},
+		getLockScreenImages: function(set) {
+			return $http.get("/api/slides/" + set).then(function success(response) {
+				return response.data;
+			});
+		},
+
 		select: function() {
 			var self = this;
 			return $uibModal.open({
@@ -150,6 +168,7 @@ app.factory("Settings", function($window, $interpolate, $uibModal, CONTENT_ID, D
 				self.setAutoSaveName(settings.autoSaveName);
 				self.setLockScreenTime(settings.lockScreenTime);
 				self.setLockScreenInterval(settings.lockScreenInterval);
+				self.setLockScreenSet(settings.lockScreenSet);
 				self.setBackgroundImage(settings.backgroundImage);
 			});
 		}
@@ -169,6 +188,17 @@ app.controller("SettingsCtrl", function ($scope, $uibModalInstance, $log, Settin
 		"Arial",
 		"Times New Roman"
 	];
+	Settings.getLockScreenSets().then(function success(sets) {
+		$scope.lockScreenSets = sets;
+		$scope.lockScreenSet = sets[0]; // just in case we can't find the current one
+		var set = Settings.getLockScreenSet();
+		for(var i in sets) {
+			if (sets[i].id == set) {
+				$scope.lockScreenSet = sets[i];
+				break;
+			}
+		}
+	});
 
 	$scope.selectStorage = function() {
 		Volumes.select();
@@ -185,6 +215,7 @@ app.controller("SettingsCtrl", function ($scope, $uibModalInstance, $log, Settin
 			autoSaveName: $scope.autoSaveName,
 			lockScreenTime: $scope.lockScreenTime.restore(),
 			lockScreenInterval: $scope.lockScreenInterval.restore(),
+			lockScreenSet: $scope.lockScreenSet.id,
 			backgroundImage: $scope.backgroundImage
 		});
 	};
