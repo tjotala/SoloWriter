@@ -22,7 +22,10 @@
 		<script type="text/javascript" src="scripts/email.js"></script>
 	</head>
 	<body ng-controller="SoloWriterCtrl">
-		<div ng-show="isLocked()" ng-controller="SlideShowCtrl" class="slideshow">
+		<div ng-if="shutting_down" class="shutdown">
+			<p>Shutting down...</p>
+		</div>
+		<div ng-if="isLocked()" ng-controller="SlideShowCtrl" class="slideshow">
 			<div uib-carousel interval="interval" active="active" no-pause="true" no-wrap="false">
 				<div uib-slide ng-repeat="slide in slides" index="$index">
 					<img ng-src="{{slide.image}}">

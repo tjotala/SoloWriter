@@ -94,3 +94,17 @@ html {
 	font-family: monospace;
 	text-transform: uppercase;
 }
+
+.shutdown {
+	position: fixed;
+	top: 0px;
+	left: 0px;
+	width: 800px;
+	height: 480px;
+}
+
+.shutdown p {
+	text-align: center;
+	padding-top: 50px;
+	font-size: 50px;
+}

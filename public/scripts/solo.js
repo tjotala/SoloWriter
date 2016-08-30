@@ -73,6 +73,7 @@ app.controller("SoloWriterCtrl", function($scope, $window, $log, $http, $interva
 	};
 
 	$scope.shutdown = function() {
+		$scope.shutting_down = true;
 		$http.post("/api/shutdown");
 		$log.info("shutting down the browser");
 		$window.close(); // self-destruct this browser
