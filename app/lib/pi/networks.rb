@@ -10,6 +10,10 @@ class Networks
 
 	MOD_WPA = File.join(Platform::BIN_PATH, 'mod_wpa.rb').freeze
 
+	TYPE_ETHERNET = 'ethernet'.freeze
+	TYPE_WIRELESS = 'wireless'.freeze
+	TYPE_UNKNOWN = 'unknown'.freeze
+
 	class KnownWireless
 		attr_reader :list
 
@@ -52,18 +56,41 @@ class Networks
 		Platform::run("sudo ifconfig #{interface}").each_line do |line|
 			case line
 			when /(\w+)\s+Link.+HWaddr\s+(#{MAC_ADDRESS})/
-				net[:interface] = $1.to_s
-				net[:mac_address] = $2.to_s
-				net[:type] = ($1 =~ /^eth/) ? 'ethernet' : 'wireless';
+				net[:interface] = $1.to_s.strip
+				net[:mac_address] = $2.to_s.strip
+				case net[:interface]
+				when /^eth/
+					net[:type] = TYPE_ETHERNET
+				when /^wlan/
+					net[:type] = TYPE_WIRELESS
+					case Platform::run("sudo iwconfig #{interface}", true)
+					when /#{interface}\s+(IEEE.+)\s+ESSID:"([^"]+)"/
+						net[:protocol] = $1.to_s.strip
+						net[:ssid] = $2.to_s.strip
+					else
+						net[:protocol] = nil
+						net[:ssid] = nil
+					end
+				else
+					net[:type] == TYPE_UNKNOWN
+				end
 			when /inet addr:(#{IPV4_ADDRESS})\s+Bcast:(#{IPV4_ADDRESS})\s+Mask:(#{IPV4_ADDRESS})/
-				net[:ipv4_address] = $1.to_s
-				net[:broadcast_address] = $2.to_s
-				net[:netmask] = $3.to_s
+				net[:ipv4_address] = $1.to_s.strip
+				net[:broadcast_address] = $2.to_s.strip
+				net[:netmask] = $3.to_s.strip
 			when /inet6 addr:(#{IPV6_ADDRESS})/
-				net[:ipv6_address] = $1.to_s
+				net[:ipv6_address] = $1.to_s.strip
 			end
 		end
-		(net[:interface].nil? || net[:interface].empty?) ? nil : Network.new(net)
+		return nil if net[:interface].nil? || net[:interface].empty?
+		net[:gateway_address] = Platform::run("netstat -r | awk '/default.+#{interface}/ { print $2; exit }'", true).chomp.strip
+		if net[:ipv4_address].nil? or net[:gateway_address].empty?
+			net[:gateway_address] = nil
+			net[:connected] = false
+		else
+			net[:connected] = (Platform::run("ping -q -w 1 -c 1 -I #{interface} #{net[:gateway_address]}", true) !~ /unreachable/)
+		end
+		Network.new(net)
 	end
 
 	def scan_wireless(interface)
@@ -82,11 +109,11 @@ class Networks
 			case line
 			when /Cell \d+ - Address: (#{MAC_ADDRESS})/
 				yield(net) unless net[:ssid].nil? or net[:ssid].empty?
-				net = { interface: interface, mac_address: $1.to_s }
+				net = { interface: interface, type: TYPE_WIRELESS, mac_address: $1.to_s }
 			when /ESSID:"([^"]*)"/
 				net[:ssid] = $1.to_s
 			when /Protocol:(.+)/
-				net[:type] = $1.to_s
+				net[:protocol] = $1.to_s
 			when /Encryption key:(on|off)/
 				net[:encryption] = $1.to_s == 'on'
 			when /Quality=(\d+)\//
@@ -99,6 +126,7 @@ class Networks
 	def connect(interface, ssid, password)
 		KnownWireless.new.add(interface, ssid, password)
 		Platform::run("sudo ifdown #{interface}")
+		Platform::run("sudo iwconfig #{interface} essid \"#{ssid}\"")
 		Platform::run("sudo ifup #{interface}")
 		get(interface)
 	end
