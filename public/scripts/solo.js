@@ -52,7 +52,7 @@ app.run(function(Idle){
 	Idle.watch();
 });
 
-app.controller("SoloWriterCtrl", function($scope, $window, $log, $http, $interval, $timeout, $uibModal, Idle, Keepalive, Settings, Lock, Users, Volumes, Documents, MessageBox, CONTENT_ID) {
+app.controller("SoloWriterCtrl", function($scope, $window, $log, $http, $interval, $timeout, $uibModal, Idle, Keepalive, Settings, Networks, Lock, Users, Volumes, Documents, MessageBox, CONTENT_ID) {
 	$scope.settings = Settings;
 	$scope.currentDocument = Documents.getCurrent();
 	$scope.showBackgroundImage = true;
@@ -77,6 +77,10 @@ app.controller("SoloWriterCtrl", function($scope, $window, $log, $http, $interva
 		$http.post("/api/shutdown");
 		$log.info("shutting down the browser");
 		$window.close(); // self-destruct this browser
+	};
+
+	$scope.hasNetwork = function() {
+		return Networks.hasNetwork();
 	};
 
 	$scope.resetDoc = function(ask) {
@@ -198,6 +202,10 @@ app.controller("SoloWriterCtrl", function($scope, $window, $log, $http, $interva
 		return Lock.isLocked();
 	};
 
+	$scope.isLockScreenEnabled = function() {
+		return $scope.isLocked() && Settings.getLockScreenInterval().enabled;
+	};
+
 	$scope.$on("IdleStart", function() {
 		// the user appears to have gone idle
 		$log.debug("IdleStart");
@@ -298,12 +306,12 @@ app.controller("MessageBoxCtrl", function ($scope, $uibModalInstance, $timeout, 
 });
 
 app.controller("SlideShowCtrl", function ($scope, $http, Settings) {
-	$scope.interval = Settings.getLockScreenInterval().asMs().current;
+	var settings = Settings.getLockScreenInterval().asMs();
+	$scope.interval = settings.current;
 	$scope.active = 0;
 	$scope.slides = [ ];
 
-	var set = Settings.getLockScreenSet();
-	Settings.getLockScreenImages(set).then(function success(images) {
+	Settings.getLockScreenImages(settings.set).then(function success(images) {
 		$scope.slides = images;
 	});
 });
