@@ -10,7 +10,7 @@
 					<label class="control-label">Text Size</label>
 				</td>
 				<td class="col-sm-9">
-					<select style="width: 30%; display: inline" ng-options="font for font in fonts" ng-model="textSize.font"></select>
+					<select style="width: 30%; display: inline" ng-options="font as font for font in fonts" ng-model="textSize.font"></select>
 					<span class="pull-right" ng-style="textSize.asStyle()">Lorem ipsum</span>
 					<div>
 						<input type="range" ng-model="textSize.current" min="{{textSize.min}}" max="{{textSize.max}}" step="{{textSize.step}}" autofocus></input>

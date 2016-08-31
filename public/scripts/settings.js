@@ -47,9 +47,9 @@ app.factory("Settings", function($window, $interpolate, $uibModal, $http, CONTEN
 		step: 2, // px
 		units: "px",
 		default: parseFloat($window.getComputedStyle(getById(CONTENT_ID)).getPropertyValue("font-size")),
-		asStyle: function() { return { 'font-size': this.current + this.units, 'font-family': this.font }; },
 		font: $window.getComputedStyle(getById(CONTENT_ID)).getPropertyValue("font-family"),
-		setFrom: function(other) { this.enabled = other.enabled; this.current = other.current; }
+		setFrom: function(other) { this.enabled = other.enabled; this.current = other.current; this.font = other.font; },
+		asStyle: function() { return { 'font-size': this.current + this.units, 'font-family': this.font }; }
 	});
 
 	var autoSaveTime = new RangeOption({
@@ -81,9 +81,9 @@ app.factory("Settings", function($window, $interpolate, $uibModal, $http, CONTEN
 		max: 60 * 1000, // ms
 		step: 5 * 1000, // ms
 		default: 10 * 1000, // ms
-		setFrom: function(other) { this.enabled = other.enabled; this.current = other.current; }
+		set: "family",
+		setFrom: function(other) { this.enabled = other.enabled; this.current = other.current; this.set = other.set; }
 	});
-	var lockScreenSet = "family";
 
 	var backgroundImage = true;
 	var devMode = false;  // true = development mode, false = not development mode
@@ -138,12 +138,6 @@ app.factory("Settings", function($window, $interpolate, $uibModal, $http, CONTEN
 			lockScreenInterval.setFrom(other);
 		},
 
-		getLockScreenSet: function() {
-			return lockScreenSet;
-		},
-		setLockScreenSet: function(other) {
-			lockScreenSet = other;
-		},
 		getLockScreenSets: function() {
 			return $http.get("/api/slides/").then(function success(response) {
 				return response.data;
@@ -168,7 +162,6 @@ app.factory("Settings", function($window, $interpolate, $uibModal, $http, CONTEN
 				self.setAutoSaveName(settings.autoSaveName);
 				self.setLockScreenTime(settings.lockScreenTime);
 				self.setLockScreenInterval(settings.lockScreenInterval);
-				self.setLockScreenSet(settings.lockScreenSet);
 				self.setBackgroundImage(settings.backgroundImage);
 			});
 		}
@@ -183,17 +176,21 @@ app.controller("SettingsCtrl", function ($scope, $uibModalInstance, $log, Settin
 	$scope.lockScreenInterval = Settings.getLockScreenInterval().asSec();
 	$scope.backgroundImage = Settings.getBackgroundImage();
 	$scope.fonts = [
-		"Georgia",
-		"Verdana",
-		"Arial",
-		"Times New Roman"
+		"serif",
+		"sans-serif",
+		"monospace"
 	];
+	for(var f in $scope.fonts) {
+		if ($scope.fonts[f] == $scope.textSize.font) {
+			$scope.textSize.font = $scope.fonts[f];
+			break;
+		}
+	}
 	Settings.getLockScreenSets().then(function success(sets) {
 		$scope.lockScreenSets = sets;
 		$scope.lockScreenSet = sets[0]; // just in case we can't find the current one
-		var set = Settings.getLockScreenSet();
 		for(var i in sets) {
-			if (sets[i].id == set) {
+			if (sets[i].id == $scope.lockScreenInterval.set) {
 				$scope.lockScreenSet = sets[i];
 				break;
 			}
@@ -209,13 +206,14 @@ app.controller("SettingsCtrl", function ($scope, $uibModalInstance, $log, Settin
 	};
 
 	$scope.ok = function() {
+		var interval = $scope.lockScreenInterval.restore();
+		interval.set = $scope.lockScreenSet.id;
 		$uibModalInstance.close({
 			textSize: $scope.textSize,
 			autoSaveTime: $scope.autoSaveTime.restore(),
 			autoSaveName: $scope.autoSaveName,
 			lockScreenTime: $scope.lockScreenTime.restore(),
-			lockScreenInterval: $scope.lockScreenInterval.restore(),
-			lockScreenSet: $scope.lockScreenSet.id,
+			lockScreenInterval: interval,
 			backgroundImage: $scope.backgroundImage
 		});
 	};
