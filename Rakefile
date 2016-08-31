@@ -11,7 +11,6 @@ TARGET = "#{TARGET_USER}@#{TARGET_IP}"
 
 PUBLIC = 'public'
 BIN = 'bin'
-CONF = 'conf'
 APP = 'app'
 SPEC = 'spec'
 DIST = 'dist'
@@ -22,7 +21,6 @@ USERS = 'users'
 SOURCES = FileList[]
 SOURCES.include(File.join(PUBLIC, '**', '*'))
 SOURCES.include(File.join(BIN, '**', '*'))
-SOURCES.include(File.join(CONF, '**', '*.{sh,png}'))
 SOURCES.include(File.join(APP, '**', '*'), 'Gemfile', 'Rakefile')
 SOURCES.include(File.join(SPEC, '**', '*'))
 SOURCES.include(File.join(DOCS, '**', '*')).exclude(/autosave$/).exclude(/\h{8}-\h{4}-\h{4}-\h{4}-\h{12}/)
@@ -80,14 +78,24 @@ namespace :target do
 		ssh "cd ~/solo && rake spec".quoted
 	end
 
+	desc "Take a screenshot and copy back"
+	task :screenshot do
+		shots = Dir['screenshot*.png']
+		shot = (shots.sort.pop || 'screenshot00.png').pathmap('%n').succ + '.png'
+		ssh "DISPLAY=:0 scrot /tmp/#{shot}"
+		sh "scp pi@#{TARGET_IP}:/tmp/#{shot} ./#{shot}"
+		ssh "rm /tmp/#{shot}"
+	end
+
 	desc "Wipe the target system"
 	task :wipe do
 		ssh "rm -r ~/solo"
 	end
 
-	desc "Reload the browser on the target system"
+	desc "Relaunch the app on the target system"
 	task :reload do
-		ssh "sudo killall kweb"
+		ssh "sudo killall midori || true"
+		ssh "sudo killall ruby || true"
 	end
 
 	desc "Reboot the target system"
@@ -104,18 +112,16 @@ end # namespace :target
 namespace :prep do
 
 	desc "Prepare the target Raspberry Pi from Jessie Lite"
-	task :lite => [ :ssh, :cleanup, :update, :network, :wpa_us, :ntp, :ntfs, :ruby, :xwindows, :fonts, :wm, :kweb, :app ]
+	task :lite => [ :cleanup, :update, :network, :wpa_us, :ntp, :ntfs, :ruby, :xwindows, :fonts, :wm, :midori, :app_folders, :enable_auto_launch, :boot_screen ]
 
-	desc "Install your SSH key"
-	task :ssh do
-		sh "ssh-copy-id pi@#{TARGET_IP}"
-	end
-
-	desc "Cleanup unwanted junk"
+	desc "Disable unneeded features"
 	task :cleanup do
 		ssh "sudo systemctl disable ModemManager.service"
 		ssh "sudo systemctl disable triggerhappy.service"
-	end
+
+		# disable remote GPIO
+ 		ssh "sudo rm -f /etc/systemd/system/pigpiod.service.d/public.conf"
+ 	end
 
 	desc "Update the system image"
 	task :update do
@@ -123,9 +129,12 @@ namespace :prep do
 		ssh "sudo apt-get -y upgrade"
 	end
 
-	desc "Configure the network interfaces for DHCP"
+	desc "Configure the network interfaces"
 	task :network do
+		# enable DHCP on eth{0,1} and wlan{0,1}
 		ssh "sudo " + "sed -i -e 's/inet manual/inet dhcp/;s/iface eth0 inet dhcp/allow-hotplug eth0\\niface eth0 inet dhcp\\n\\nallow-hotplug eth1\\niface eth1 inet dhcp/' /etc/network/interfaces".quoted
+		# disable wait for Ethernet on boot
+		ssh "sudo rm -f /etc/systemd/system/dhcpcd.service.d/wait.conf"
 	end
 
 	desc "Configure WiFi for US"
@@ -179,9 +188,32 @@ namespace :prep do
 	end
 
 	desc "Prepare subfolders for the application installation"
-	task :app do
+	task :app_folders do
 		ssh "sudo mkdir -p /var/log/solo"
 		ssh "sudo chown pi:pi /var/log/solo"
+	end
+
+	desc "Set up the pi user to auto-launch the app"
+	task :enable_auto_launch do
+		ssh "echo . /home/pi/solo/bin/run.sh >> /home/pi/.profile".quoted
+	end
+
+	desc "Configure boot behavior"
+	task :boot_screen do
+		ssh "sudo update-initramfs -c -t -k $(uname -r)"
+		# tell the bootloader what image to use
+		ssh "echo initramfs initrd.img-$(uname -r) | sudo tee -a /boot/config.txt".quoted
+		# turn off the rainbox square
+		ssh "echo disable_splash=1 | sudo tee -a /boot/config.txt".quoted
+		# quiet the boot messages
+		ssh "sudo " + "sed -i -e 's/console=tty1/console=tty3 quiet loglevel=3/' /boot/cmdline.txt".quoted
+		# re-generate initramfs
+		ssh "sudo update-initramfs -u"
+	end
+
+	desc "Install screenshot utility"
+	task :screenshot do
+		ssh "sudo apt-get -y install scrot"
 	end
 
 end # namespace :prep
