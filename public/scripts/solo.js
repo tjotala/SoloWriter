@@ -100,7 +100,7 @@ app.controller("SoloWriterCtrl", function($scope, $window, $log, $http, $interva
 	$scope.openDoc = function(ask) {
 		if (ask && Documents.getCurrent().isDirty()) {
 			MessageBox.confirm({
-				name: Documents.getCurrent().name
+				name: Documents.getCurrent().getSafeName()
 			}).then(function ok() {
 				$scope.openDoc(false); // call myself without prompting
 			});
