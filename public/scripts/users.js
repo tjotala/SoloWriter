@@ -104,7 +104,7 @@ app.factory("Users", function($http, $log, $uibModal, User) {
 				size: "lg"
 			}).result.then(function success(user) {
 				if (angular.isDefined(user)) {
-					$log.info("setting currentUser to " + user.username);
+					$log.debug("setting currentUser to " + user.username);
 					currentUser = user; // logged in
 				} else {
 					currentUser = undefined; // logged out
@@ -140,7 +140,7 @@ app.controller("UsersCtrl", function ($scope, $log, $uibModalInstance, Users, Pa
 		}).then(function success(response) {
 			$scope.loading = true;
 			Users.login(user.username, response.password).then(function success(user) {
-				$log.info("logged in as " + user.username);
+				$log.debug("logged in as " + user.username);
 				$uibModalInstance.close(user);
 			}, function failure() {
 				MessageBox.error({

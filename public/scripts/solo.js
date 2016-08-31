@@ -167,7 +167,7 @@ app.controller("SoloWriterCtrl", function($scope, $window, $log, $http, $interva
 
 	$scope.autoSave = function() {
 		if (Documents.getCurrent().shouldSave() && Settings.getAutoSaveTime().enabled) {
-			$log.info(now8601() + " -- autosaving");
+			$log.debug(now8601() + " -- autosaving");
 			Documents.getCurrent().save(Volumes.getCurrent(), Settings.getAutoSaveName().name(Documents.getCurrent().getSafeName()), true);
 		} else {
 			$log.debug(now8601() + " -- skipped autosave, nothing to save");
@@ -176,20 +176,20 @@ app.controller("SoloWriterCtrl", function($scope, $window, $log, $http, $interva
 
 	$scope.lock = function() {
 		if (Settings.getLockScreenTime().enabled) {
-			$log.info("locking...");
+			$log.debug("locking...");
 			$scope.autoSave();
 			Lock.lock();
 			$timeout(angular.noop); // flush rendering
-			$log.info("locked");
+			$log.debug("locked");
 		}
 	};	
 
 	$scope.unlock = function() {
 		if (Settings.getLockScreenTime().enabled) {
-			$log.info("unlocking...");
+			$log.debug("unlocking...");
 			Lock.challenge(Idle.getTimeout() * 1000 / 3).then(function success() {
 				$timeout(angular.noop); // flush rendering
-				$log.info("unlocked");
+				$log.debug("unlocked");
 			});
 		}
 	};
