@@ -276,19 +276,19 @@ angular.module('ngIdle.idle', ['ngIdle.keepalive', 'ngIdle.localStorage'])
           },
           interrupt: function(anotherTab) {
             if (!state.running && !state.idling) {
-              console.log("interrupt: !running");
+              // console.log("interrupt: !running");
               return;
             }
 
             if (options.timeout && this.isExpired() && !state.idling) {
-              console.log("interrupt: timed out!");
+              // console.log("interrupt: timed out!");
               timeout();
               return;
             }
 
             // note: you can no longer auto resume once we exceed the expiry; you will reset state by calling watch() manually
             if (anotherTab || (options.autoResume === 'idle' && state.idling) || (options.autoResume === 'notIdle' && !state.idling)) {
-              console.log("interrupt: re-watching!");
+              // console.log("interrupt: re-watching!");
               this.watch(anotherTab);
             }
           }
