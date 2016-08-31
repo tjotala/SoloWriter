@@ -4,6 +4,7 @@ app.service("Email", function($uibModal) {
 			animation: false,
 			templateUrl: "dialogs/email.html",
 			controller: "EmailCtrl",
+			size: "lg",
 			resolve: {
 				email: function() {
 					return email;
@@ -13,7 +14,7 @@ app.service("Email", function($uibModal) {
 	};
 });
 
-app.controller("EmailCtrl", function ($scope, $uibModalInstance, email) {
+app.controller("EmailCtrl", function ($scope, $uibModalInstance, $log, email) {
 	$scope.sender = email.sender;
 	$scope.password = email.password; // likely undefined;
 	$scope.recipient = email.recipient;
@@ -31,5 +32,15 @@ app.controller("EmailCtrl", function ($scope, $uibModalInstance, email) {
 
 	$scope.cancel = function() {
 		$uibModalInstance.dismiss("cancel");
+	};
+
+	$scope.appendDate = function() {
+		var now = new Date();
+		$scope.subject += " " + now.toLocaleDateString();
+	};
+
+	$scope.appendTime = function(field) {
+		var now = new Date();
+		$scope.subject += " " + now.toLocaleTimeString();
 	};
 });
