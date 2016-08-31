@@ -35,6 +35,14 @@ function now8601() {
 	return (new Date()).toISOString();
 }
 
+function clearObj(obj) {
+	for(var prop in obj) {
+		if (obj.hasOwnProperty(prop) && !angular.isFunction(obj[prop])) {
+			delete obj[prop];
+		}
+	}
+}
+
 app.constant("CONTENT_ID", "content");
 app.constant("LOCAL_VOLUME_ID", "local");
 app.constant("DEFAULT_DOCUMENT_NAME", "Untitled");

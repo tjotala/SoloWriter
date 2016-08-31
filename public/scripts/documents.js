@@ -11,6 +11,7 @@ app.factory("Document", function($http, DEFAULT_DOCUMENT_NAME) {
 
 	return function(doc) {
 		this.setData = function(doc) {
+			clearObj(this);
 			angular.extend(this, doc);
 			this.clearDirty();
 			return this;

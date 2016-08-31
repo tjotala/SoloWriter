@@ -2,7 +2,7 @@ app.factory("Network", function($http, $log) {
 	return function(network) {
 		this.setData = function(net) {
 			if (angular.isDefined(net)) {
-				delete this.ipv4_address; // the incoming net may not have one
+				clearObj(this); // clear any previous fields
 				angular.extend(this, net);
 			}
 			return this;
@@ -19,6 +19,15 @@ app.factory("Network", function($http, $log) {
 			});
 		};
 
+		this.getName = function() {
+			if (this.isEthernet()) {
+				return "Wired";
+			} else if (this.isWireless()) {
+				return "Wireless";
+			}
+			return "Unknown";
+		};
+
 		this.getIcon = function() {
 			if (this.isEthernet()) {
 				return "fa-exchange";
@@ -29,23 +38,31 @@ app.factory("Network", function($http, $log) {
 		};
 
 		this.isEthernet = function() {
-			return this.type === "ethernet";
+			return this.type == "ethernet";
 		};
 
 		this.isWireless = function() {
-			return this.type === "wireless";
+			return this.type == "wireless";
 		};
 
 		this.isForgettable = function() {
 			return this.known;
 		};
 
+		this.isConnected = function() {
+			return this.connected;
+		};
+
 		this.isConnectable = function() {
-			return angular.isUndefined(this.ipv4_address) || this.ipv4_address.trim().length == 0;
+			return this.isWireless() && !this.isConnected();
 		};
 
 		this.isDisconnectable = function() {
-			return angular.isDefined(this.ipv4_address) && this.ipv4_address.trim().length > 0;
+			return this.isWireless() && this.isConnected();
+		};
+
+		this.isSwitchable = function() {
+			return this.isWireless();
 		};
 
 		this.connect = function(password) {
@@ -78,7 +95,7 @@ app.factory("Network", function($http, $log) {
 	};
 });
 
-app.factory("Networks", function($http, $uibModal, Network) {
+app.factory("Networks", function($http, $uibModal, $interval, $log, Network) {
 	function getPath(network) {
 		return "/api/networks/" + encodeURIComponent(network || "");
 	}
@@ -89,12 +106,33 @@ app.factory("Networks", function($http, $uibModal, Network) {
 		});
 	}
 
+	function getAvailableList() {
+		return $http.get(getPath("available")).then(function success(response) {
+			return parseList(response.data);
+		});
+	}
+
+	function scanForNetwork() {
+		$log.debug("scan for active network...");
+		return getAvailableList().then(
+			function success(list) {
+				for(var net in list) {
+					if (list[net].isConnected()) {
+						return true; // we only need to find one live one
+					}
+				}
+				return false;
+			}, function failure() {
+				return false;
+			}
+		);
+	}
+
+	var lastNetworkStatus = scanForNetwork();
+	$interval(function() { lastNetworkStatus = scanForNetwork(); }, 15 * 1000);
+
 	return {
-		getAvailableList: function() {
-			return $http.get(getPath("available")).then(function success(response) {
-				return parseList(response.data);
-			});
-		},
+		getAvailableList: getAvailableList,
 
 		getWirelessList: function(interface) {
 			return $http.get(getPath(interface) + "/scan").then(function success(response) {
@@ -102,18 +140,22 @@ app.factory("Networks", function($http, $uibModal, Network) {
 			});
 		},
 
+		hasNetwork: function() {
+			return lastNetworkStatus;
+		},
+
 		select: function() {
 			return $uibModal.open({
 				animation: false,
 				templateUrl: "dialogs/networks.html",
 				controller: "NetworkCtrl",
-				size: "md"
+				size: "lg"
 			}).result;
 		}
 	};
 });
 
-app.controller("NetworkCtrl", function ($scope, $uibModal, $uibModalInstance, $log, Networks, MessageBox) {
+app.controller("NetworkCtrl", function ($scope, $uibModal, $uibModalInstance, $log, $interval, Networks, MessageBox) {
 	$scope.networks = undefined;
 	$scope.loading = false;
 
@@ -124,6 +166,19 @@ app.controller("NetworkCtrl", function ($scope, $uibModal, $uibModalInstance, $l
 		}).finally(function() {
 			$scope.loading = false;
 		});
+	}
+
+	function startScan() {
+		stopScan();
+		refresh();
+		$scope.scanner = $interval(function() { refresh(); }, 10000);
+	}
+
+	function stopScan() {
+		if (angular.isDefined($scope.scanner)) {
+			$interval.cancel($scope.scanner);
+			$scope.scanner = undefined;
+		}
 	}
 
 	$scope.isOperatingOn = function(network) {
@@ -155,7 +210,12 @@ app.controller("NetworkCtrl", function ($scope, $uibModal, $uibModalInstance, $l
 		});
 	};
 
-	refresh();
+	$scope.cancel = function() {
+		stopScan();
+		$uibModalInstance.dismiss('cancel');
+	};
+
+	startScan();
 });
 
 app.controller("WirelessNetworkCtrl", function ($scope, $uibModalInstance, $log, $interval, Networks, Password, MessageBox, interface) {
@@ -165,7 +225,7 @@ app.controller("WirelessNetworkCtrl", function ($scope, $uibModalInstance, $log,
 
 	function refresh() {
 		$scope.loading = true;
-		$log.info("scanning wireless networks on " + $scope.interface);
+		$log.debug("scanning wireless networks on " + $scope.interface);
 		Networks.getWirelessList($scope.interface).then(function success(list) {
 			$scope.networks = list;
 		}).finally(function() {
@@ -175,6 +235,7 @@ app.controller("WirelessNetworkCtrl", function ($scope, $uibModalInstance, $log,
 
 	function startScan() {
 		stopScan();
+		refresh();
 		$scope.scanner = $interval(function() { refresh(); }, 10000);
 	}
 
@@ -234,6 +295,5 @@ app.controller("WirelessNetworkCtrl", function ($scope, $uibModalInstance, $log,
 		$uibModalInstance.dismiss('cancel');
 	};
 
-	refresh();
 	startScan();
 });

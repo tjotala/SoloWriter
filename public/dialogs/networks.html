@@ -1,6 +1,6 @@
 <div class="modal-header bg-success">
 	<h4 class="modal-title pull-left">Network Settings</h4>
-	<i role="button" class="fa fa-2x fa-close pull-right" ng-click="$dismiss('cancel')"></i>
+	<i role="button" class="fa fa-2x fa-close pull-right" ng-click="cancel()"></i>
 	<i class="fa fa-2x fa-spinner fa-spin pull-right" ng-show="loading"></i>
 </div>
 <div class="modal-body">
@@ -9,22 +9,41 @@
 			<tr>
 				<th>Type</th>
 				<th>Interface</th>
-				<th>IP Address</th>
-				<th>MAC</th>
+				<th>Addresses</th>
 				<th>Actions</th>
 			</tr>
 		</thead>
 		<tbody>
 			<tr ng-repeat="network in networks">
 				<td><i class="fa fa-lg fa-fw" ng-class="network.getIcon()"></i></td>
-				<td title="{{network.interface}}">{{network.getName()}}</td>
-				<td class="ip_address">{{network.ipv4_address}}</td>
-				<td class="mac_address">{{network.mac_address}}</td>
+				<td title="{{network.interface}}">
+					{{network.getName()}}<span ng-if="network.isWireless() && network.ssid"><br/>({{network.ssid}})</span>
+				</td>
+				<td>
+					<table class="net_addresses">
+						<tr>
+							<td class="net_label">IP:</td>
+							<td class="ip_address">{{network.ipv4_address}}</td>
+						</tr>
+						<tr>
+							<td class="net_label">Gateway:</td>
+							<td class="ip_address">{{network.gateway_address}}</td>
+						</tr>
+						<tr>
+							<td class="net_label">Netmask:</td>
+							<td class="ip_address">{{network.netmask}}</td>
+						</tr>
+						<tr>
+							<td class="net_label">MAC:</td>
+							<td class="mac_address">{{network.mac_address}}</td>
+						</tr>
+					</table>
+				</td>
 				<td>
 					<i class="fa fa-lg fa-fw fa-spinner fa-spin" ng-show="isOperatingOn(network)"></i>
 					<i class="fa fa-lg fa-fw fa-link" role="button" title="Connect" ng-show="network.isConnectable() && !isOperatingOn(network)" ng-click="connect(network)"></i>
 					<i class="fa fa-lg fa-fw fa-unlink" role="button" title="Disconnect" ng-show="network.isDisconnectable() && !isOperatingOn(network)" ng-click="disconnect(network)"></i>
-					<i class="fa fa-lg fa-fw fa-refresh" role="button" title="Switch" ng-show="network.isDisconnectable() && network.isWireless() && !isOperatingOn(network)" ng-click="connect(network)"></i>
+					<i class="fa fa-lg fa-fw fa-refresh" role="button" title="Switch" ng-show="network.isSwitchable() && !isOperatingOn(network)" ng-click="connect(network)"></i>
 				</td>
 			</tr>
 		</tbody>

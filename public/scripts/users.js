@@ -1,6 +1,7 @@
 app.factory("User", function($http) {
 	return function(user) {
 		this.setData = function(user) {
+			clearObj(this);
 			angular.extend(this, user);
 			return this;
 		};

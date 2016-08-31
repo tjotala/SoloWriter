@@ -2,6 +2,7 @@ app.factory("Volume", function($http, LOCAL_VOLUME_ID) {
 	return function(volume) {
 		this.setData = function(vol) {
 			if (angular.isDefined(vol)) {
+				clearObj(this);
 				angular.extend(this, vol);
 			}
 			return this;

@@ -90,6 +90,12 @@ html {
 	margin: auto;
 }
 
+table.net_addresses td.net_label {
+	padding-right: 1em;
+	font-weight: bold;
+	text-align: right;
+}
+
 .ip_address, .mac_address {
 	font-family: monospace;
 	text-transform: uppercase;

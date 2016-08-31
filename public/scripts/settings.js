@@ -1,5 +1,6 @@
 function RangeOption(values) {
 	this.setData = function(other) {
+		clearObj(this);
 		angular.extend(this, other);
 		this.default = this.default || this.min;
 		this.current = this.current || this.default;
