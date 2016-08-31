@@ -21,7 +21,7 @@ app.controller("EmailCtrl", function ($scope, $uibModalInstance, email) {
 
 	$scope.ok = function() {
 		var result = {
-			sender: $scope.sender,
+			sender: $scope.sender + "@gmail.com",
 			password: $scope.password,
 			recipient: $scope.recipient || $scope.sender,
 			subject: $scope.subject
