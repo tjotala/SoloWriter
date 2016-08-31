@@ -1,16 +1,27 @@
-app.factory("User", function($http, moment) {
+app.factory("User", function($http, Settings, moment) {
 	return function(user) {
 		this.setData = function(user) {
 			clearObj(this);
 			angular.extend(this, user);
 			this.modified = new moment(this.modified);
 			this.loggedin = new moment(this.loggedin);
+			if (angular.isDefined(this.settings)) {
+				Settings.setAll(this.settings);
+			}
 			return this;
 		};
 
 		this.load = function(id) {
 			var self = this;
 			return $http.get("/api/users/" + id).then(function success(response) {
+				return self.setData(response.data);
+			});
+		};
+
+		this.save = function(settings) {
+			var self = this;
+			var body = { new_settings: Settings.getAll() };
+			return $http.post("/api/users/" + this.id, body).then(function success(response) {
 				return self.setData(response.data);
 			});
 		};
@@ -88,6 +99,12 @@ app.factory("Users", function($http, $log, $uibModal, User) {
 
 		getCurrent: function() {
 			return currentUser;
+		},
+
+		saveSettings: function() {
+			if (angular.isDefined(currentUser)) {
+				currentUser.save();
+			}
 		},
 
 		create: function(username, password) {

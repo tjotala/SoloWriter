@@ -49,6 +49,7 @@ app.factory("Settings", function($window, $interpolate, $uibModal, $http, $log, 
 		units: "px",
 		default: parseFloat($window.getComputedStyle(getById(CONTENT_ID)).getPropertyValue("font-size")),
 		font: $window.getComputedStyle(getById(CONTENT_ID)).getPropertyValue("font-family"),
+		getSaved: function() { return { enabled: this.enabled, current: this.current, font: this.font }; },
 		setFrom: function(other) { this.enabled = other.enabled; this.current = other.current; this.font = other.font; },
 		asStyle: function() { return { 'font-size': this.current + this.units, 'font-family': this.font }; }
 	});
@@ -59,12 +60,14 @@ app.factory("Settings", function($window, $interpolate, $uibModal, $http, $log, 
 		max: 5 * 60 * 1000, // ms
 		step: 0.5 * 60 * 1000, // ms
 		default: 1 * 60 * 1000, // ms
+		getSaved: function() { return { enabled: this.enabled, current: this.current }; },
 		setFrom: function(other) {this.enabled = other.enabled; this.current = other.current; }
 	});
 	var autoSaveName = {
 		enabled: true,
 		pattern: "{{name}}.autosave", // this is run through $interpolate(pattern)({ name: <filename> })
 		name: function(fill) { return $interpolate(this.pattern)({ name: angular.isDefined(fill) ? fill : DEFAULT_DOCUMENT_NAME}); },
+		getSaved: function() { return { enabled: this.enabled }; },
 		setFrom: function(other) { this.enabled = other.enabled; }
 	};
 
@@ -74,6 +77,7 @@ app.factory("Settings", function($window, $interpolate, $uibModal, $http, $log, 
 		max: 10 * 60 * 1000, // ms
 		step: 1 * 60 * 1000, // ms
 		default: 1 * 60 * 1000, // ms
+		getSaved: function() { return { enabled: this.enabled, current: this.current }; },
 		setFrom: function(other) { this.enabled = other.enabled; this.current = other.current; }
 	});
 	var lockScreenInterval = new RangeOption({
@@ -83,6 +87,7 @@ app.factory("Settings", function($window, $interpolate, $uibModal, $http, $log, 
 		step: 5 * 1000, // ms
 		default: 10 * 1000, // ms
 		set: "family",
+		getSaved: function() { return { enabled: this.enabled, current: this.current, set: this.set }; },
 		setFrom: function(other) { this.enabled = other.enabled; this.current = other.current; this.set = other.set; }
 	});
 
@@ -168,14 +173,30 @@ app.factory("Settings", function($window, $interpolate, $uibModal, $http, $log, 
 				controller: "SettingsCtrl",
 				size: "lg"
 			}).result.then(function success(settings) {
-				self.setTextSize(settings.textSize);
-				self.setAutoSaveTime(settings.autoSaveTime);
-				self.setAutoSaveName(settings.autoSaveName);
-				self.setLockScreenTime(settings.lockScreenTime);
-				self.setLockScreenInterval(settings.lockScreenInterval);
-				self.setBackgroundImage(settings.backgroundImage);
-				self.setTimeZone(settings.timezone);
+				self.setAll(settings);
 			});
+		},
+
+		getAll: function() {
+			return {
+				textSize: textSize.getSaved(),
+				autoSaveTime: autoSaveTime.getSaved(),
+				autoSaveName: autoSaveName.getSaved(),
+				lockScreenTime: lockScreenTime.getSaved(),
+				lockScreenInterval: lockScreenInterval.getSaved(),
+				backgroundImage: backgroundImage,
+				timezone: this.getTimeZone()
+			};
+		},
+
+		setAll: function(saved) {
+			this.setTextSize(saved.textSize);
+			this.setAutoSaveTime(saved.autoSaveTime);
+			this.setAutoSaveName(saved.autoSaveName);
+			this.setLockScreenTime(saved.lockScreenTime);
+			this.setLockScreenInterval(saved.lockScreenInterval);
+			this.setBackgroundImage(saved.backgroundImage);
+			this.setTimeZone(saved.timezone);
 		}
 	};
 });

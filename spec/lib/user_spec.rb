@@ -84,6 +84,37 @@ describe User do
 			end
 		end
 
+		context "when changing settings" do
+			it "should change them" do
+				expect{ user.new_settings({ hammer: 'shiny!' }) }.to change{ user.settings }
+				expect( user.settings ).to eq({ hammer: 'shiny!' })
+			end
+
+			it "should clobber any existing settings" do
+				user.new_settings({ hammer: 'shiny!' })
+				expect{ user.new_settings({ daddy: 'Odin!' }) }.to change{ user.settings }
+				expect( user.settings ).to eq({ daddy: 'Odin!' })
+			end
+
+			it "should change modified" do
+				user.touch
+				delay
+				expect{ user.new_settings({ hammer: 'shiny!' }) }.to change{ user.modified }
+			end
+
+			it "should not change id" do
+				expect{ user.new_settings({ hammer: 'shiny!' }) }.not_to change{ user.id }
+			end
+
+			it "should not change username" do
+				expect{ user.new_settings({ hammer: 'shiny!' }) }.not_to change{ user.username }
+			end
+
+			it "should not change loggedin" do
+				expect{ user.new_settings({ hammer: 'shiny!' }) }.not_to change{ user.loggedin }
+			end
+		end
+
 		it "should validate password" do
 			expect( user.password?("hammer") ).to be true
 			expect( user.password?("!hammer") ).to be false

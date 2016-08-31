@@ -15,6 +15,7 @@ class User
 	attr_reader :password
 	attr_reader :modified
 	attr_reader :loggedin
+	attr_reader :settings
 
 	def password?(password)
 		@password.match?(password)
@@ -35,6 +36,12 @@ class User
 	def new_token
 		@loggedin = self.class.now
 		Token.create(@id).encode
+	end
+
+	def new_settings(settings)
+		@settings = settings
+		touch
+		self
 	end
 
 	def save
@@ -58,6 +65,7 @@ class User
 			username: @username.to_s,
 			modified: @modified.nil? ? nil : @modified.iso8601,
 			loggedin: @loggedin.nil? ? nil : @loggedin.iso8601,
+			settings: @settings,
 		}.select { |k, v| v }.to_json(args)
 	end
 
@@ -71,7 +79,8 @@ class User
 			username: @username.encode,
 			password: @password.encode,
 			modified: @modified.nil? ? nil : @modified.iso8601,
-			loggedin: @loggedin.nil? ? nil : @loggedin.iso8601
+			loggedin: @loggedin.nil? ? nil : @loggedin.iso8601,
+			settings: @settings
 		})
 	end
 
@@ -87,9 +96,14 @@ class User
 		"#{@id} (#{@username})"
 	end
 
+	def clear_private
+		@settings = nil
+		self
+	end
+
 	class << self
 		def create(username, password)
-			self.new(SecureRandom.uuid, Username.create(username), Password.create(password), now, nil)
+			self.new(SecureRandom.uuid, Username.create(username), Password.create(password), now, nil, nil)
 		end
 
 		def decode(encoded)
@@ -99,7 +113,8 @@ class User
 				Username.decode(user[:username]),
 				Password.decode(user[:password]),
 				user[:modified].nil? ? nil : Time.parse(user[:modified]),
-				user[:loggedin].nil? ? nil : Time.parse(user[:loggedin])
+				user[:loggedin].nil? ? nil : Time.parse(user[:loggedin]),
+				user[:settings],
 			)
 		rescue JSON::ParserError
 			invalid_argument("user record", "corrupted")
@@ -143,8 +158,12 @@ class User
 			File.join(Platform::USERS_PATH, id)
 		end
 
-		def list
-			Dir[User.path('*')].map { |path| self.from_path(path) }
+		def list(current_id = nil)
+			Dir[User.path('*')].map do |path|
+				user = self.from_path(path)
+				user.clear_private if current_id != user.id
+				user
+			end
 		end
 
 		def now
@@ -154,11 +173,12 @@ class User
 
 	private
 
-	def initialize(id, username, password, modified, loggedin)
+	def initialize(id, username, password, modified, loggedin, settings)
 		@id = id
 		@username = username
 		@password = password
 		@modified = modified
 		@loggedin = loggedin
+		@settings = settings
 	end
 end

@@ -159,6 +159,7 @@ app.controller("SoloWriterCtrl", function($scope, $window, $log, $http, $interva
 		Settings.select().then(function succeed() {
 			$scope.startLockScreen();
 			$scope.startAutoSave();
+			Users.saveSettings();
 		}).finally(function() {
 			setFocus(CONTENT_ID);
 		});

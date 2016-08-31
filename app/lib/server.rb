@@ -189,7 +189,8 @@ class SoloServer < Sinatra::Base
 	# @return 200 list of users
 	#
 	get '/api/users/?' do
-		json settings.users.list
+		user = user_from_token
+		json settings.users.list(!user.nil? && user.id)
 	end
 
 	##
@@ -227,18 +228,22 @@ class SoloServer < Sinatra::Base
 	# @body password
 	# @body new_password
 	# @body new_username
+	# @body new_settings (token required; no password required)
 	# @return 200 updated user
 	# @return 403 if password does not match user
 	#
 	post '/api/users/:id' do
-		user = if @request_json[:new_username]
-			settings.users.update_username(params[:id], @request_json[:password], @request_json[:new_username])
+		if @request_json[:new_username]
+			json settings.users.update_username(params[:id], @request_json[:password], @request_json[:new_username])
 		elsif @request_json[:new_password]
-			settings.users.update_password(params[:id], @request_json[:password], @request_json[:new_password])
+			json settings.users.update_password(params[:id], @request_json[:password], @request_json[:new_password])
+		elsif @request_json[:new_settings]
+			user = user_from_token
+			forbidden if params[:id] != user.id
+			json settings.users.update_settings(params[:id], @request_json[:new_settings])
 		else
 			bad_request("nothing to change")
 		end
-		json user
 	end
 
 	##

@@ -2,8 +2,8 @@ require 'errors'
 require 'user'
 
 class Users
-	def list
-		User.list
+	def list(current_id = nil)
+		User.list(current_id)
 	end
 
 	def from_id(id, password)
@@ -42,6 +42,11 @@ class Users
 		user = from_id(id, password)
 		forbidden if user.password?(new_password) # new_password == old_password
 		user.new_password(new_password).save
+	end
+
+	def update_settings(id, settings)
+		user = User.from_id(id)
+		user.new_settings(settings).save
 	end
 
 	def delete(id, password)
