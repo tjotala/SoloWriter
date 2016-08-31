@@ -1,4 +1,14 @@
 app.factory("Document", function($http, DEFAULT_DOCUMENT_NAME) {
+	function countCharacters(content) {
+		matches = content.match(/[\w\d\-]/gm);
+		return matches ? matches.length : 0;
+	}
+
+	function countWords(content) {
+		matches = content.match(/\w[\w\d\-]*/gm);
+		return matches ? matches.length : 0;
+	}
+
 	return function(doc) {
 		this.setData = function(doc) {
 			angular.extend(this, doc);
@@ -101,6 +111,13 @@ app.factory("Document", function($http, DEFAULT_DOCUMENT_NAME) {
 
 		this.shouldSave = function() {
 			return this.isDirty();
+		};
+
+		this.count = function() {
+			return {
+				characters: countCharacters(this.content),
+				words: countWords(this.content),
+			};
 		};
 
 		this.setData(doc);
@@ -259,6 +276,7 @@ app.controller("SaveDocCtrl", function ($scope, $uibModalInstance, $log, Users, 
 	$scope.currentVolume = Volumes.getCurrent();
 	$scope.currentUser = Users.getCurrent();
 	$scope.currentDocument = Documents.getCurrent();
+	$scope.counts = $scope.currentDocument.count();
 	if (angular.isUndefined($scope.currentDocument.name) || $scope.currentDocument.name.trim().length == 0) {
 		// Grab the first non-blank line from the document content to propose as the default name
 		var line = $scope.currentDocument.content.match(/^\s*(.+)\s*$/m);
