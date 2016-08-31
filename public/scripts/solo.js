@@ -37,7 +37,7 @@ function now8601() {
 
 app.constant("CONTENT_ID", "content");
 app.constant("LOCAL_VOLUME_ID", "local");
-app.constant("DEFAULT_DOCUMENT_NAME", "NoName");
+app.constant("DEFAULT_DOCUMENT_NAME", "Untitled");
 
 app.config(function($logProvider, IdleProvider, KeepaliveProvider){
 	$logProvider.debugEnabled(false);
