@@ -1,4 +1,4 @@
-app.factory("Document", function($http, DEFAULT_DOCUMENT_NAME) {
+app.factory("Document", function($http, DEFAULT_DOCUMENT_NAME, moment) {
 	function countCharacters(content) {
 		matches = content.match(/[\w\d\-]/gm);
 		return matches ? matches.length : 0;
@@ -13,6 +13,7 @@ app.factory("Document", function($http, DEFAULT_DOCUMENT_NAME) {
 		this.setData = function(doc) {
 			clearObj(this);
 			angular.extend(this, doc);
+			this.modified = new moment(this.modified);
 			this.clearDirty();
 			return this;
 		};

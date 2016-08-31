@@ -1,8 +1,10 @@
-app.factory("User", function($http) {
+app.factory("User", function($http, moment) {
 	return function(user) {
 		this.setData = function(user) {
 			clearObj(this);
 			angular.extend(this, user);
+			this.modified = new moment(this.modified);
+			this.loggedin = new moment(this.loggedin);
 			return this;
 		};
 

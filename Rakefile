@@ -112,7 +112,7 @@ end # namespace :target
 namespace :prep do
 
 	desc "Prepare the target Raspberry Pi from Jessie Lite"
-	task :lite => [ :cleanup, :update, :network, :wpa_us, :ntp, :ntfs, :ruby, :xwindows, :fonts, :wm, :midori, :app_folders, :enable_auto_launch, :boot_screen ]
+	task :lite => [ :cleanup, :update, :network, :wpa_us, :ntp, :"tz:pacific", :ntfs, :ruby, :xwindows, :fonts, :wm, :midori, :app_folders, :enable_auto_launch, :boot_screen ]
 
 	desc "Disable unneeded features"
 	task :cleanup do
@@ -209,6 +209,28 @@ namespace :prep do
 		ssh "sudo " + "sed -i -e 's/console=tty1/console=tty3 quiet loglevel=3/' /boot/cmdline.txt".quoted
 		# re-generate initramfs
 		ssh "sudo update-initramfs -u"
+	end
+
+	namespace :tz do
+		desc "Set timezone to Pacific"
+		task :pacific do
+			ssh "sudo timedatectl set-timezone America/Los_Angeles"
+		end
+
+		desc "Set timezone to Mountain"
+		task :central do
+			ssh "sudo timedatectl set-timezone America/Denver"
+		end
+
+		desc "Set timezone to Central"
+		task :central do
+			ssh "sudo timedatectl set-timezone America/Chicago"
+		end
+
+		desc "Set timezone to Eastern"
+		task :central do
+			ssh "sudo timedatectl set-timezone America/New_York"
+		end
 	end
 
 	desc "Install screenshot utility"

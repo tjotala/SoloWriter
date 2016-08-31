@@ -15,7 +15,7 @@
 		<tbody ng-switch="documents.length">
 			<tr ng-switch-default role="button" ng-repeat="doc in documents | orderBy: 'name'" ng-model="doc" ng-hide="doc.removed">
 				<td ng-click="selectDoc(doc)">{{doc.name}}</td>
-				<td ng-click="selectDoc(doc)">{{doc.modified | date: 'short' }}</td>
+				<td ng-click="selectDoc(doc)" title="{{doc.modified.toString()}}">{{doc.modified.fromNow()}}</td>
 				<td ng-click="selectDoc(doc)">{{doc.size | bytes}}</td>
 				<td>
 					<i class="fa fa-lg fa-lock" role="button" ng-show="!doc.locked" ng-click="lockDoc(doc)" title="Lock"></i>

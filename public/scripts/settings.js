@@ -39,7 +39,7 @@ function RangeOption(values) {
 	return this;
 }
 
-app.factory("Settings", function($window, $interpolate, $uibModal, $http, CONTENT_ID, DEFAULT_DOCUMENT_NAME) {
+app.factory("Settings", function($window, $interpolate, $uibModal, $http, $log, CONTENT_ID, DEFAULT_DOCUMENT_NAME, moment) {
 
 	var textSize = new RangeOption({
 		enabled: true,
@@ -150,6 +150,16 @@ app.factory("Settings", function($window, $interpolate, $uibModal, $http, CONTEN
 			});
 		},
 
+		getTimeZone: function(tz) {
+			if (angular.isDefined(moment.defaultZone) && moment.defaultZone != null) {
+				return moment.defaultZone.name;
+			}
+			return moment.tz.guess();
+		},
+		setTimeZone: function(tz) {
+			moment.tz.setDefault(tz);
+		},
+
 		select: function() {
 			var self = this;
 			return $uibModal.open({
@@ -164,6 +174,7 @@ app.factory("Settings", function($window, $interpolate, $uibModal, $http, CONTEN
 				self.setLockScreenTime(settings.lockScreenTime);
 				self.setLockScreenInterval(settings.lockScreenInterval);
 				self.setBackgroundImage(settings.backgroundImage);
+				self.setTimeZone(settings.timezone);
 			});
 		}
 	};
@@ -181,9 +192,9 @@ app.controller("SettingsCtrl", function ($scope, $uibModalInstance, $log, Settin
 		"sans-serif",
 		"monospace"
 	];
-	for(var f in $scope.fonts) {
-		if ($scope.fonts[f] == $scope.textSize.font) {
-			$scope.textSize.font = $scope.fonts[f];
+	for(var i in $scope.fonts) {
+		if ($scope.fonts[i] == $scope.textSize.font) {
+			$scope.textSize.font = $scope.fonts[i];
 			break;
 		}
 	}
@@ -197,6 +208,24 @@ app.controller("SettingsCtrl", function ($scope, $uibModalInstance, $log, Settin
 			}
 		}
 	});
+	$scope.timezones = [
+		"Pacific/Honolulu",
+		"America/Anchorage",
+		"America/Los_Angeles",
+		"America/Denver",
+		"America/Chicago",
+		"America/New_York"
+	];
+	var tz = Settings.getTimeZone();
+	for(var i in $scope.timezones) {
+		if ($scope.timezones[i] == tz) {
+			$scope.timezone = $scope.timezones[i];
+		}
+	}
+
+	$scope.now = function() {
+		return (new moment()).tz($scope.timezone);
+	};
 
 	$scope.selectStorage = function() {
 		Volumes.select();
@@ -215,7 +244,8 @@ app.controller("SettingsCtrl", function ($scope, $uibModalInstance, $log, Settin
 			autoSaveName: $scope.autoSaveName,
 			lockScreenTime: $scope.lockScreenTime.restore(),
 			lockScreenInterval: interval,
-			backgroundImage: $scope.backgroundImage
+			backgroundImage: $scope.backgroundImage,
+			timezone: $scope.timezone
 		});
 	};
 });

@@ -10,7 +10,7 @@
 					<label class="control-label">Text Size</label>
 				</td>
 				<td class="col-sm-9">
-					<select style="width: 30%; display: inline" ng-options="font as font for font in fonts" ng-model="textSize.font"></select>
+					<select style="width: 30%; display: inline" ng-options="font for font in fonts" ng-model="textSize.font"></select>
 					<span class="pull-right" ng-style="textSize.asStyle()">Lorem ipsum</span>
 					<div>
 						<input type="range" ng-model="textSize.current" min="{{textSize.min}}" max="{{textSize.max}}" step="{{textSize.step}}" autofocus></input>
@@ -61,8 +61,17 @@
 				<td class="col-sm-3">
 					<label class="control-label">Background</label>
 				</td>
-				<td class="col-sm-9" colspan="2">
+				<td class="col-sm-9">
 					<ng-checkbox ng-model="backgroundImage"> Show background image when not typing</ng-checkbox>
+				</td>
+			</tr>
+			<tr>
+				<td class="col-sm-3">
+					<label class="control-label">Date/Time</label>
+				</td>
+				<td class="col-sm-9">
+					<select style="width: 30%; display: inline" ng-options="timezone for timezone in timezones" ng-model="timezone"></select>
+					<span class="pull-right">{{now().toString()}}</span>
 				</td>
 			</tr>
 		</table>

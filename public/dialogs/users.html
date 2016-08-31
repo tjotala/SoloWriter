@@ -17,8 +17,8 @@
 			<tbody ng-switch="users.length">
 				<tr ng-switch-default ng-repeat="user in users | orderBy: 'username'" ng-model="user" ng-class="isCurrent(user) ? 'bg-warning' : ''">
 					<td role="button" ng-class="isCurrent(user) ? 'text-warning' : 'text-success'" ng-click="isCurrent(user) ? logoutUser(user) : loginUser(user)"><i class="fa fa-lg fa-fw" ng-class="isCurrent(user) ? 'fa-lock' : 'fa-unlock'"></i>&nbsp;{{user.username}}</td>
-					<td>{{user.modified | date: 'short'}}</td>
-					<td>{{user.loggedin | date: 'short'}}</td>
+					<td title="{{user.modified.toString()}}">{{user.modified.fromNow()}}</td>
+					<td title="{{user.loggedin.toString()}}">{{user.loggedin.fromNow()}}</td>
 					<td>
 						<i class="fa fa-lg fa-fw fa-edit" role="button" title="Change Username" ng-click="changeUsername(user)"></i>
 						<i class="fa fa-lg fa-fw fa-user-secret" role="button" title="Change Password" ng-click="changePassword(user)"></i>

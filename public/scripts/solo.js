@@ -60,6 +60,8 @@ app.run(function(Idle){
 	Idle.watch();
 });
 
+app.constant("moment", moment);
+
 app.controller("SoloWriterCtrl", function($scope, $window, $log, $http, $interval, $timeout, $uibModal, Idle, Keepalive, Settings, Networks, Lock, Users, Volumes, Documents, MessageBox, CONTENT_ID) {
 	$scope.settings = Settings;
 	$scope.currentDocument = Documents.getCurrent();
