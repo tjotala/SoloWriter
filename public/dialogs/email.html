@@ -3,32 +3,40 @@
 	<i class="fa fa-2x fa-close pull-right vertical-center" role="button" ng-click="cancel()"></i>
 </div>
 <div class="modal-body">
-	<form class="form-horizontal" ng-submit="ok()">
+	<form class="form-horizontal" name="thisForm" ng-submit="thisForm.$valid && ok()">
 		<div class="form-group">
-			<label for="sender" class="col-sm-3 control-label">Username</label>
+			<label for="sender" class="col-sm-3 control-label">Sender</label>
 			<div class="col-sm-9">
 				<div class="input-group">
-					<input type="email" class="form-control" placeholder="Enter sender" ng-pattern="[a-zA-Z0-9\.\-\+_]+" ng-trim="true" ng-model="sender" ng-enter="ok()" ng-required autofocus></input>
+					<input type="text" class="form-control" name="sender" placeholder="Enter sender" ng-minlength="1" ng-model="sender" ng-enter="thisForm.$valid && ok()" required autofocus></input>
 					<span class="input-group-addon">@gmail.com</span>
 				</div>
+				<p class="help-block" ng-show="thisForm.sender.$touched && thisForm.sender.$invalid">Invalid sender address</p>
 			</div>
 		</div>
 		<div class="form-group">
 			<label for="password" class="col-sm-3 control-label">Password</label>
 			<div class="col-sm-9">
-				<input type="password" class="form-control" placeholder="Enter password" ng-minlength="3" ng-model="password" ng-required ng-enter="ok()"></input>
+				<input type="password" class="form-control" name="password" placeholder="Enter password" ng-minlength="3" ng-model="password" required ng-enter="thisForm.$valid && ok()"></input>
+				<p class="help-block" ng-show="thisForm.password.$touched && thisForm.password.$invalid">Invalid password</p>
 			</div>
 		</div>
 		<div class="form-group">
 			<label for="recipient" class="col-sm-3 control-label">Recipient</label>
 			<div class="col-sm-9">
-				<input type="email" class="form-control" placeholder="{{sender}}" ng-pattern="[a-zA-Z0-9\.\-\+_]+@[a-z0-9\.\-_]+" ng-trim="true" ng-model="recipient" ng-enter="ok()"></input>
+				<input type="email" class="form-control" placeholder="{{sender + '@gmail.com'}}" ng-model="recipient" ng-enter="thisForm.$valid && ok()"></input>
+				<p class="help-block" ng-show="thisForm.recipient.$touched || thisForm.recipient.$invalid">Invalid recipient address</p>
 			</div>
 		</div>
 		<div class="form-group">
 			<label for="subject" class="col-sm-3 control-label">Subject</label>
 			<div class="col-sm-9">
-				<input type="text" class="form-control" placeholder="Enter subject" ng-minlength="1" ng-trim="true" ng-model="subject" ng-enter="ok()"></input>
+				<div class="input-group">
+					<input type="text" class="form-control" placeholder="Enter subject" ng-minlength="1" ng-maxlength="250" required ng-model="subject" ng-enter="thisForm.$valid && ok()"></input>
+					<span class="input-group-addon" role="button" ng-click="appendDate()"><i class="fa fa-plus"></i>&nbsp;Date</span>
+					<span class="input-group-addon" role="button" ng-click="appendTime()"><i class="fa fa-plus"></i>&nbsp;Time</span>
+				</div>
+				<p class="help-block" ng-show="thisForm.subject.$touched && thisForm.subject.$invalid">Invalid subject</p>
 			</div>
 		</div>
 	</form>
