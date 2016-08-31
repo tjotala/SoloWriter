@@ -17,7 +17,7 @@
 		<tbody>
 			<tr ng-repeat="network in networks">
 				<td><i class="fa fa-lg fa-fw" ng-class="network.getIcon()"></i></td>
-				<td>{{network.interface}}</td>
+				<td title="{{network.interface}}">{{network.getName()}}</td>
 				<td class="ip_address">{{network.ipv4_address}}</td>
 				<td class="mac_address">{{network.mac_address}}</td>
 				<td>
