@@ -42,7 +42,7 @@
 				<td>
 					<i class="fa fa-lg fa-fw fa-spinner fa-spin" ng-show="isOperatingOn(network)"></i>
 					<i class="fa fa-lg fa-fw fa-link" role="button" title="Connect" ng-show="network.isConnectable() && !isOperatingOn(network)" ng-click="connect(network)"></i>
-					<i class="fa fa-lg fa-fw fa-unlink" role="button" title="Disconnect" ng-show="network.isDisconnectable() && !isOperatingOn(network)" ng-click="disconnect(network)"></i>
+					<i class="fa fa-lg fa-fw fa-eject" role="button" title="Disconnect" ng-show="network.isDisconnectable() && !isOperatingOn(network)" ng-click="disconnect(network)"></i>
 					<i class="fa fa-lg fa-fw fa-refresh" role="button" title="Switch" ng-show="network.isSwitchable() && !isOperatingOn(network)" ng-click="connect(network)"></i>
 				</td>
 			</tr>

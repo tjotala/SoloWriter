@@ -23,7 +23,7 @@
 				<td>
 					<i ng-show="isOperatingOn(volume)" class="fa fa-lg fa-fw fa-spinner fa-spin"></i>
 					<i ng-show="isSelectable(volume)" role="button" class="fa fa-lg fa-fw" title="Select" ng-class="isCurrent(volume) ? 'fa-check-square-o' : 'fa-square-o'" ng-click="select(volume)"></i>
-					<i ng-show="isUnmountable(volume)" role="button" class="fa fa-lg fa-fw fa-unlink" title="Disconnect" ng-click="unmount(volume)"></i>
+					<i ng-show="isUnmountable(volume)" role="button" class="fa fa-lg fa-fw fa-eject" title="Disconnect" ng-click="unmount(volume)"></i>
 					<i ng-show="isMountable(volume)" role="button" class="fa fa-lg fa-fw fa-link" title="Connect" ng-click="mount(volume)"></i>
 				</td>
 			</tr>

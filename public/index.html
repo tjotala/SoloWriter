@@ -47,13 +47,13 @@
 				<button class="btn btn-primary navbar-btn" ng-click="sendDoc()" ng-disabled="!hasNetwork()"><i class="fa fa-lg fa-send"></i>&nbsp;Send</button>
 			</div>
 			<div class="pull-right">
-				<button class="btn btn-primary navbar-btn" ng-click="selectSettings()"><i class="fa fa-lg fa-gear"></i>&nbsp;Settings</button>
 				<button class="btn btn-info navbar-btn" ng-click="selectUser()"><i class="fa fa-lg fa-users"></i>&nbsp;Users</button>
-				<button class="btn btn-success navbar-btn" ng-click="lock()"><i class="fa fa-lg fa-lock"></i>&nbsp;Lock</button>
+				<button class="btn btn-success navbar-btn" ng-click="lock()" title="Lock"><i class="fa fa-lg fa-lock"></i></button>
+				<button class="btn btn-primary navbar-btn" ng-click="selectSettings()"><i class="fa fa-lg fa-gear"></i>&nbsp;Settings</button>
 				<div class="btn-group" role="group" ng-disabled="currentDocument.isDirty()" ng-switch="settings.isDevelopment()">
 					<button class="btn btn-warning navbar-btn" ng-switch-when="true" ng-click="reload()"><i class="fa fa-lg fa-refresh"></i>&nbsp;Refresh</button>
 					<button class="btn btn-danger navbar-btn" ng-switch-when="true" ng-click="quit()"><i class="fa fa-lg fa-power-off"></i>&nbsp;Quit</button>
-					<button class="btn btn-danger navbar-btn" ng-switch-when="false" ng-click="shutdown()"><i class="fa fa-lg fa-power-off"></i>&nbsp;Power Off</button>
+					<button class="btn btn-danger navbar-btn" ng-switch-when="false" ng-click="shutdown()"><i class="fa fa-lg fa-power-off"></i>&nbsp;Power</button>
 				</div>
 			</div>
 		</div>
