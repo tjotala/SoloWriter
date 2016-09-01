@@ -2,16 +2,20 @@ require 'errors'
 
 class RemovableVolume < Volume
 	def mount
-		Platform::run("sudo mkdir -p /media/usb")
-		Platform::run("sudo chown -R pi:pi /media/usb")
-		Platform::run("sudo mount -o uid=pi,gid=pi,rw,noatime,nodiratime,noexec,sync,dirsync,flush UUID=#{@id} /media/usb")
+		Platform::run("sudo mkdir -p #{base_path}")
+		Platform::run("sudo chown -R pi:pi #{base_path}")
+		Platform::run("sudo mount -o uid=pi,gid=pi,rw,noatime,nodiratime,noexec,sync,dirsync,flush UUID=#{@id} #{base_path}")
 		update(self.class.get(@id))
 	end
 
 	def unmount
 		Platform::run("sudo umount UUID=#{@id}")
-		Platform::run("sudo rmdir /media/usb")
+		Platform::run("sudo rmdir #{base_path}")
 		update(self.class.get(@id))
+	end
+
+	def base_path
+		"/media/usb"
 	end
 
 	class << self
