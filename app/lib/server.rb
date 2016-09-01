@@ -13,6 +13,7 @@ require 'documents'
 require 'username'
 require 'password'
 require 'slides'
+require 'music'
 
 class SoloServer < Sinatra::Base
 	configure do
@@ -537,6 +538,71 @@ class SoloServer < Sinatra::Base
 		image = SlideSetList.create(*volumes)[set_id].image(params[:filename])
 		cache_control :public, :max_age => 60 * 60
 		send_file(image.path, :type => image.type)
+	end
+
+	#################################################################
+	## Music
+	#################################################################
+
+	##
+	# Get Music Sets on a Volume
+	#
+	# @method GET
+	# @param volume_id storage volume
+	# @return 200 list of music sets
+	#
+	get '/api/volumes/:volume_id/music/?' do
+		volume_id = params[:volume_id]
+		volumes = (volume_id == Volume::ANY) ? settings.volumes.list : volume_from_id(volume_id)
+		json MusicSetList.create(*volumes)
+	end
+
+	##
+	# Get Music Set on a Volume
+	#
+	# @method GET
+	# @param volume_id storage volume
+	# @param set_id music set
+	# @return 200 music set
+	#
+	get '/api/volumes/:volume_id/music/:set_id/?' do
+		volume_id = params[:volume_id]
+		set_id = params[:set_id]
+		volumes = (volume_id == Volume::ANY) ? settings.volumes.list : volume_from_id(volume_id)
+		json MusicSetList.create(*volumes)[set_id]
+	end
+
+	##
+	# Get Music Set Songs on a Volume
+	#
+	# @method GET
+	# @param volume_id storage volume
+	# @param set_id music set
+	# @return 200 list of random music
+	#
+	get '/api/volumes/:volume_id/music/:set_id/songs/?' do
+		volume_id = params[:volume_id]
+		set_id = params[:set_id]
+		volumes = (volume_id == Volume::ANY) ? settings.volumes.list : volume_from_id(volume_id)
+		json MusicSetList.create(*volumes)[set_id].songs.shuffle
+	end
+
+	##
+	# Play Music Song in a Set on a Volume
+	#
+	# @method GET
+	# @param volume_id storage volume
+	# @param set_id music set
+	# @param filename filename
+	# @return 200 image
+	#
+	post '/api/volumes/:volume_id/music/:set_id/songs/:filename' do
+		volume_id = params[:volume_id]
+		set_id = params[:set_id]
+		volumes = (volume_id == Volume::ANY) ? settings.volumes.list : volume_from_id(volume_id)
+		music = MusicSetList.create(*volumes)[set_id].song(params[:filename])
+		music.play
+		204
 	end
 
 	#################################################################

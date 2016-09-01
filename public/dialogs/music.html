@@ -1,0 +1,19 @@
+<div class="modal-header bg-primary">
+	<h4 class="modal-title pull-left">Music</h4>
+	<i class="fa fa-2x fa-close pull-right" role="button" ng-click="$dismiss('cancel')"></i>
+</div>
+<div class="modal-body">
+	<table class="table table-condensed">
+		<tbody>
+			<tr ng-repeat="song in songs">
+				<td>{{$index + 1}}</td>
+				<td role="button" ng-click="play(song)"><i class="fa fa-fa-lg fa-fw fa-play"></i>&nbsp;{{song.name}}</td>
+				<td class="pull-right">{{song.duration}}</td>
+			</tr>
+		</tbody>
+	</table>
+</div>
+<div class="modal-footer">
+	<button class="btn btn-primary" ng-click="play()"><i class="fa fa-lg fa-play"></i>&nbsp;Play</button>
+	<button class="btn btn-primary" ng-click="shuffle()"><i class="fa fa-lg fa-random"></i>&nbsp;Shuffle</button>
+</div>

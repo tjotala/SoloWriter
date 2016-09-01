@@ -62,7 +62,7 @@ app.run(function(Idle){
 
 app.constant("moment", moment);
 
-app.controller("SoloWriterCtrl", function($scope, $window, $log, $http, $interval, $timeout, $uibModal, Idle, Keepalive, Settings, Networks, Lock, Users, Volumes, Documents, MessageBox, CONTENT_ID) {
+app.controller("SoloWriterCtrl", function($scope, $window, $log, $http, $interval, $timeout, $uibModal, Idle, Keepalive, Settings, Networks, Lock, Users, Volumes, Documents, MessageBox, Songs, CONTENT_ID) {
 	$scope.settings = Settings;
 	$scope.currentDocument = Documents.getCurrent();
 	$scope.showBackgroundImage = true;
@@ -163,6 +163,10 @@ app.controller("SoloWriterCtrl", function($scope, $window, $log, $http, $interva
 		}).finally(function() {
 			setFocus(CONTENT_ID);
 		});
+	};
+
+	$scope.selectMusic = function() {
+		Songs.select();
 	};
 
 	$scope.startLockScreen = function() {

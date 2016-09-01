@@ -22,6 +22,7 @@
 		<script type="text/javascript" src="scripts/networks.js"></script>
 		<script type="text/javascript" src="scripts/documents.js"></script>
 		<script type="text/javascript" src="scripts/email.js"></script>
+		<script type="text/javascript" src="scripts/music.js"></script>
 	</head>
 	<body ng-controller="SoloWriterCtrl">
 		<div ng-if="shutting_down" class="shutdown">
@@ -49,6 +50,7 @@
 			<div class="pull-right">
 				<button class="btn btn-info navbar-btn" ng-click="selectUser()"><i class="fa fa-lg fa-users"></i>&nbsp;Users</button>
 				<button class="btn btn-success navbar-btn" ng-click="lock()" title="Lock"><i class="fa fa-lg fa-lock"></i></button>
+				<button class="btn btn-success navbar-btn" ng-click="selectMusic()" title="Music"><i class="fa fa-lg fa-music"></i></button>
 				<button class="btn btn-primary navbar-btn" ng-click="selectSettings()"><i class="fa fa-lg fa-gear"></i>&nbsp;Settings</button>
 				<div class="btn-group" role="group" ng-disabled="currentDocument.isDirty()" ng-switch="settings.isDevelopment()">
 					<button class="btn btn-warning navbar-btn" ng-switch-when="true" ng-click="reload()"><i class="fa fa-lg fa-refresh"></i>&nbsp;Refresh</button>
