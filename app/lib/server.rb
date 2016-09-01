@@ -8,8 +8,11 @@ require 'networks'
 require 'documents'
 require 'username'
 require 'password'
+require 'slides'
 
 class SoloServer < Sinatra::Base
+	ANY_VOLUME_ID = 'any'.freeze
+
 	configure do
 		set :root, Platform::ROOT_PATH
 		set :public_folder, Platform::PUBLIC_PATH
@@ -125,51 +128,19 @@ class SoloServer < Sinatra::Base
 		end
 	end
 
+	#################################################################
+	## General
+	#################################################################
+
+	##
+	# Get Home Page
+	#
+	# @method GET
+	# @return 200 configuration items
+	#
 	get '/' do
 		cache_control :public, :max_age => 60
-		content_type :html
-		send_file(File.join(settings.public_folder, 'index.html'))
-	end
-
-	def get_slideshow_sets
-		Dir[File.join(Platform::PUBLIC_PATH, 'images', 'slides', '*')].map do |dir|
-			set = File.basename(dir)
-			{
-				id: set,
-				name: set.capitalize,
-				count: get_slideshow_images(set).length,
-				license: "/images/slides/#{set}/LICENSE",
-			}
-		end
-	end
-
-	def get_slideshow_images(set)
-		Dir[File.join(Platform::PUBLIC_PATH, 'images', 'slides', set, '*.{jpg,jpeg,gif,png}')].map do |file|
-			{
-				image: "/images/slides/#{set}/#{File.basename(file)}"
-			}
-		end
-	end
-
-	##
-	# Get Slideshow Sets
-	#
-	# @method GET
-	# @return 200 list of image sets
-	#
-	get '/api/slides/?' do
-		json get_slideshow_sets
-	end
-
-	##
-	# Get Slideshow Images
-	#
-	# @method GET
-	# @return 200 list of random images
-	#
-	get '/api/slides/:set/?' do
-		set = params[:set]
-		json get_slideshow_images(set).shuffle
+		send_file(File.join(settings.public_folder, 'index.html'), :type => :html)
 	end
 
 	##
@@ -181,6 +152,84 @@ class SoloServer < Sinatra::Base
 	get '/api/config' do
 		json config
 	end
+
+	##
+	# Send Email
+	#
+	# @method POST
+	# @param sender
+	# @param password
+	# @param recipient
+	# @param subject
+	# @param content
+	# @return 200 ok
+	#
+	post '/api/send' do
+		begin
+			mail = Mail.new({
+				from: @request_json[:sender],
+				to: @request_json[:recipient],
+				subject: @request_json[:subject],
+				body: @request_json[:content]
+			})
+			mail.header['X-Sent-From'] = Platform::PRODUCT_FULLNAME
+			options = {
+				address: "smtp.gmail.com",
+	            port: 587,
+	            domain: 'tjotala.com',
+	            user_name: @request_json[:sender],
+	            password: @request_json[:password],
+	            authentication: 'plain',
+	            enable_starttls_auto: true
+	        }
+			mail.delivery_method :smtp, options
+			mail.deliver
+		rescue NoMethodError => e # this would be typically if we de-ref the @request_json with a key that's not defined
+			bad_request("missing field(s)")
+		end
+	end
+
+	##
+	# Ping Server
+	#
+	# @method GET
+	# @return 200 ok
+	#
+	get '/api/ping' do
+		'ok'
+	end
+
+	##
+	# Quit Server
+	#
+	# @method POST
+	# @return 204 ok
+	#
+	post '/api/quit' do
+		Thread.new do
+			sleep(2)
+			Platform::quit
+		end
+		status 204
+	end
+
+	##
+	# Shutdown Appliance
+	#
+	# @method POST
+	# @return 204 ok
+	#
+	post '/api/shutdown' do
+		Thread.new do
+			sleep(2)
+			Platform::shutdown
+		end
+		status 204
+	end
+
+	#################################################################
+	## Users
+	#################################################################
 
 	##
 	# List Users
@@ -293,6 +342,10 @@ class SoloServer < Sinatra::Base
 		json user
 	end
 
+	#################################################################
+	## Volumes
+	#################################################################
+
 	##
 	# List Storage Volumes
 	#
@@ -340,72 +393,9 @@ class SoloServer < Sinatra::Base
 		json settings.volumes.unmount(volume_from_id(params[:volume_id]))
 	end
 
-	##
-	# List Available Networks
-	#
-	# @method GET
-	# @return 200 list of available networks
-	#
-	get '/api/networks/available/?' do
-		json settings.networks.available
-	end
-
-	##
-	# Scan Wireless Networks
-	#
-	# @method GET
-	# @return 200 list of nearby wireless networks
-	#
-	get '/api/networks/:interface/scan/?' do
-		json settings.networks.scan_wireless(params[:interface])
-	end
-
-	##
-	# Connect Wireless Network
-	#
-	# @method POST
-	# @param interface
-	# @param ssid
-	# @param password
-	# @return 200 network status
-	#
-	post '/api/networks/:interface/connect/?' do
-		json settings.networks.connect(params[:interface], @request_json[:ssid], @request_json[:password])
-	end
-
-	##
-	# Disconnect Wireless Network
-	#
-	# @method POST
-	# @param interface
-	# @return 200 network status
-	#
-	post '/api/networks/:interface/disconnect/?' do
-		json settings.networks.disconnect(params[:interface])
-	end
-
-	##
-	# List Known Wireless Networks
-	#
-	# @method POST
-	# @param interface
-	# @return 200 list of wireless networks
-	#
-	post '/api/networks/:interface/known/?' do
-		json settings.networks.list_known(params[:interface])
-	end
-
-	##
-	# Forget Wireless Network
-	#
-	# @method POST
-	# @param interface
-	# @param ssid
-	# @return 200 network status
-	#
-	post '/api/networks/:interface/forget/?' do
-		json settings.networks.forget_known(params[:interface], @request_json[:ssid])
-	end
+	#################################################################
+	## Documents
+	#################################################################
 
 	##
 	# List Documents
@@ -481,77 +471,139 @@ class SoloServer < Sinatra::Base
 		json documents(params[:volume_id]).get(params[:filename]).unlock
 	end
 
-	##
-	# Send Email
-	#
-	# @method POST
-	# @param sender
-	# @param password
-	# @param recipient
-	# @param subject
-	# @param content
-	# @return 200 ok
-	#
-	post '/api/send' do
-		begin
-			mail = Mail.new({
-				from: @request_json[:sender],
-				to: @request_json[:recipient],
-				subject: @request_json[:subject],
-				body: @request_json[:content]
-			})
-			mail.header['X-Sent-From'] = Platform::PRODUCT_FULLNAME
-			options = {
-				address: "smtp.gmail.com",
-	            port: 587,
-	            domain: 'tjotala.com',
-	            user_name: @request_json[:sender],
-	            password: @request_json[:password],
-	            authentication: 'plain',
-	            enable_starttls_auto: true
-	        }
-			mail.delivery_method :smtp, options
-			mail.deliver
-		rescue NoMethodError => e # this would be typically if we de-ref the @request_json with a key that's not defined
-			bad_request("missing field(s)")
-		end
-	end
+	#################################################################
+	## Slideshows
+	#################################################################
 
 	##
-	# Ping Server
+	# Get Slideshow Sets on a Volume
 	#
 	# @method GET
-	# @return 200 ok
+	# @param volume_id storage volume
+	# @return 200 list of image sets
 	#
-	get '/api/ping' do
-		'ok'
+	get '/api/volumes/:volume_id/slides/?' do
+		volume_id = params[:volume_id]
+		volumes = (volume_id == ANY_VOLUME_ID) ? settings.volumes.list : volume_from_id(volume_id)
+		json SlideSetList.create(*volumes)
 	end
 
 	##
-	# Quit Server
+	# Get Slideshow Set on a Volume
 	#
-	# @method POST
-	# @return 204 ok
+	# @method GET
+	# @param volume_id storage volume
+	# @param set_id slideshow set
+	# @return 200 slideshow set
 	#
-	post '/api/quit' do
-		Thread.new do
-			sleep(2)
-			Platform::quit
-		end
-		status 204
+	get '/api/volumes/:volume_id/slides/:set_id/?' do
+		volume_id = params[:volume_id]
+		set_id = params[:set_id]
+		volumes = (volume_id == ANY_VOLUME_ID) ? settings.volumes.list : volume_from_id(volume_id)
+		json SlideSetList.create(*volumes)[set_id]
 	end
 
 	##
-	# Shutdown Appliance
+	# Get Slideshow Set Images on a Volume
+	#
+	# @method GET
+	# @param volume_id storage volume
+	# @param set_id slideshow set
+	# @return 200 list of random images
+	#
+	get '/api/volumes/:volume_id/slides/:set_id/images/?' do
+		volume_id = params[:volume_id]
+		set_id = params[:set_id]
+		volumes = (volume_id == ANY_VOLUME_ID) ? settings.volumes.list : volume_from_id(volume_id)
+		json SlideSetList.create(*volumes)[set_id].images.shuffle
+	end
+
+	##
+	# Get Slideshow Image in a Set on a Volume
+	#
+	# @method GET
+	# @param volume_id storage volume
+	# @param set_id slideshow set
+	# @param filename filename
+	# @return 200 image
+	#
+	get '/api/volumes/:volume_id/slides/:set_id/images/:filename' do
+		volume_id = params[:volume_id]
+		set_id = params[:set_id]
+		volumes = (volume_id == ANY_VOLUME_ID) ? settings.volumes.list : volume_from_id(volume_id)
+		image = SlideSetList.create(*volumes)[set_id].image(params[:filename])
+		cache_control :public, :max_age => 60 * 60
+		send_file(image.path, :type => image.type)
+	end
+
+	#################################################################
+	## Networks
+	#################################################################
+
+	##
+	# List Available Networks
+	#
+	# @method GET
+	# @return 200 list of available networks
+	#
+	get '/api/networks/available/?' do
+		json settings.networks.available
+	end
+
+	##
+	# Scan Wireless Networks
+	#
+	# @method GET
+	# @return 200 list of nearby wireless networks
+	#
+	get '/api/networks/:interface/scan/?' do
+		json settings.networks.scan_wireless(params[:interface])
+	end
+
+	##
+	# Connect Wireless Network
 	#
 	# @method POST
-	# @return 204 ok
+	# @param interface
+	# @param ssid
+	# @param password
+	# @return 200 network status
 	#
-	post '/api/shutdown' do
-		Thread.new do
-			sleep(2)
-			Platform::shutdown
-		end
-		status 204
+	post '/api/networks/:interface/connect/?' do
+		json settings.networks.connect(params[:interface], @request_json[:ssid], @request_json[:password])
+	end
+
+	##
+	# Disconnect Wireless Network
+	#
+	# @method POST
+	# @param interface
+	# @return 200 network status
+	#
+	post '/api/networks/:interface/disconnect/?' do
+		json settings.networks.disconnect(params[:interface])
+	end
+
+	##
+	# List Known Wireless Networks
+	#
+	# @method POST
+	# @param interface
+	# @return 200 list of wireless networks
+	#
+	post '/api/networks/:interface/known/?' do
+		json settings.networks.list_known(params[:interface])
+	end
+
+	##
+	# Forget Wireless Network
+	#
+	# @method POST
+	# @param interface
+	# @param ssid
+	# @return 200 network status
+	#
+	post '/api/networks/:interface/forget/?' do
+		json settings.networks.forget_known(params[:interface], @request_json[:ssid])
 	end
 end

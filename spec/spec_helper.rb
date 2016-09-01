@@ -49,7 +49,7 @@ RSpec.configure do |config|
 
 	config.around(:example) do |ex|
 		FakeFS.activate!
-		FileUtils.mkdir_p(Platform::DOCS_PATH)
+		FileUtils.mkdir_p(Platform::LOCAL_PATH)
 		FileUtils.mkdir_p(Platform::USERS_PATH)
 
 		ex.run

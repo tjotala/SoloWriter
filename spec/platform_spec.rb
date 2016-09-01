@@ -19,12 +19,12 @@ describe Platform do
 			end
 		end
 
-		context "DOCS_PATH" do
+		context "LOCAL_PATH" do
 			it "should be accessible" do
 				FakeFS.deactivate!
-				expect( Platform::DOCS_PATH ).to be_a(String)
-				expect( Platform::DOCS_PATH ).to be_readable_path
-				expect( Platform::DOCS_PATH ).to be_writable_path
+				expect( Platform::LOCAL_PATH ).to be_a(String)
+				expect( Platform::LOCAL_PATH ).to be_readable_path
+				expect( Platform::LOCAL_PATH ).to be_writable_path
 				FakeFS.activate!
 			end
 		end

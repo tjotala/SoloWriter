@@ -5,7 +5,7 @@ module Platform
 	LIB_PATH = File.expand_path(File.join(ROOT_PATH, 'lib')).freeze
 	BIN_PATH = File.expand_path(File.join(ROOT_PATH, '..', 'bin')).freeze
 	PUBLIC_PATH = File.expand_path(File.join(ROOT_PATH, '..', 'public')).freeze
-	DOCS_PATH = File.expand_path(File.join(ROOT_PATH, '..', 'docs')).freeze
+	LOCAL_PATH = File.expand_path(File.join(ROOT_PATH, '..', 'local')).freeze
 	USERS_PATH = File.expand_path(File.join(ROOT_PATH, '..', 'users')).freeze
 
 	PRODUCT_NAME = 'SoloWriter'.freeze

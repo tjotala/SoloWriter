@@ -145,12 +145,12 @@ app.factory("Settings", function($window, $interpolate, $uibModal, $http, $log, 
 		},
 
 		getLockScreenSets: function() {
-			return $http.get("/api/slides/").then(function success(response) {
+			return $http.get("/api/volumes/any/slides/").then(function success(response) {
 				return response.data;
 			});
 		},
 		getLockScreenImages: function(set) {
-			return $http.get("/api/slides/" + set).then(function success(response) {
+			return $http.get("/api/volumes/any/slides/" + set + "/images").then(function success(response) {
 				return response.data;
 			});
 		},
