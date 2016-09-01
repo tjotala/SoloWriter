@@ -6,7 +6,7 @@ rescue LoadError
 end
 
 TARGET_USER = "pi"
-TARGET_IP = ENV["TARGET_IP"] || "192.168.2.103"
+TARGET_IP = ENV["TARGET_IP"] || "192.168.2.102"
 TARGET = "#{TARGET_USER}@#{TARGET_IP}"
 
 PUBLIC = 'public'
@@ -14,8 +14,7 @@ BIN = 'bin'
 APP = 'app'
 SPEC = 'spec'
 DIST = 'dist'
-DOCS = 'docs'
-LOGS = 'logs'
+LOCAL = 'local'
 USERS = 'users'
 
 SOURCES = FileList[]
@@ -23,20 +22,17 @@ SOURCES.include(File.join(PUBLIC, '**', '*'))
 SOURCES.include(File.join(BIN, '**', '*'))
 SOURCES.include(File.join(APP, '**', '*'), 'Gemfile', 'Rakefile')
 SOURCES.include(File.join(SPEC, '**', '*'))
-SOURCES.include(File.join(DOCS, '**', '*')).exclude(/autosave$/).exclude(/\h{8}-\h{4}-\h{4}-\h{4}-\h{12}/)
-#SOURCES.include(File.join(LOGS, '**', '*'))
+SOURCES.include(File.join(LOCAL, '**', '*')).exclude(/autosave$/).exclude(/\h{8}-\h{4}-\h{4}-\h{4}-\h{12}/)
 #SOURCES.include(File.join(USERS, '**', '*'))
 
 PACKAGE = File.join(DIST, 'package.tar')
 
-task :default => [ DIST, DOCS, LOGS, USERS, :deploy ]
+task :default => [ DIST, LOCAL, USERS, :deploy ]
 
 CLEAN.include(DIST)
-CLOBBER.include(LOGS)
 
 directory DIST
-directory DOCS
-directory LOGS
+directory LOCAL
 directory USERS
 
 def ssh(cmd)
