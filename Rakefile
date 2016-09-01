@@ -7,6 +7,7 @@ end
 
 TARGET_USER = "pi"
 TARGET_IP = ENV["TARGET_IP"] || "192.168.2.102"
+TARGET_DIR = "~/solo"
 TARGET = "#{TARGET_USER}@#{TARGET_IP}"
 
 PUBLIC = 'public'
@@ -23,17 +24,9 @@ SOURCES.include(File.join(BIN, '**', '*'))
 SOURCES.include(File.join(APP, '**', '*'), 'Gemfile', 'Rakefile')
 SOURCES.include(File.join(SPEC, '**', '*'))
 SOURCES.include(File.join(LOCAL, '**', '*')).exclude(/autosave$/).exclude(/\h{8}-\h{4}-\h{4}-\h{4}-\h{12}/)
-#SOURCES.include(File.join(USERS, '**', '*'))
 
-PACKAGE = File.join(DIST, 'package.tar')
-
-task :default => [ DIST, LOCAL, USERS, :deploy ]
-
-CLEAN.include(DIST)
-
-directory DIST
-directory LOCAL
-directory USERS
+PACKAGE_FILE = File.join(DIST, 'solo.tar.gz')
+PACKAGE_SIGN = "#{PACKAGE_FILE}.signature"
 
 def ssh(cmd)
 	sh "ssh #{TARGET} #{cmd}"
@@ -51,27 +44,41 @@ class Array
 	end
 end
 
+task :default => [ DIST, LOCAL, USERS, :deploy ]
+
+CLEAN.include(DIST)
+
+directory DIST
+directory LOCAL
+directory USERS
+
 desc "Deploy package"
 task :deploy => :package do
-	ssh "mkdir -p ~/solo/{users,docs}"
-	sh "scp #{PACKAGE} #{TARGET}:/tmp/#{File.basename(PACKAGE)}"
-	ssh "tar -C ~/solo --overwrite -xzvf /tmp/#{File.basename(PACKAGE)}"
-	ssh "rm /tmp/#{File.basename(PACKAGE)}"
-	ssh "cd ~/solo && bundle install --jobs `nproc`".quoted
+	ssh "mkdir -p #{TARGET_DIR}/{users,docs}"
+	sh "scp #{PACKAGE_FILE} #{PACKAGE_SIGN} #{TARGET}:/tmp/"
+	ssh "tar -C #{TARGET_DIR} --overwrite -xzvf /tmp/#{File.basename(PACKAGE_FILE)}"
+	ssh "rm /tmp/#{File.basename(PACKAGE_FILE)}"
+	ssh "cd #{TARGET_DIR} && bundle install --jobs `nproc`".quoted
 end
 
-desc "Create deployment package"
-task :package => [ DIST, PACKAGE ]
+desc "Create the deployment files"
+task :package => [ PACKAGE_FILE, PACKAGE_SIGN ]
 
-file PACKAGE => SOURCES do
-	sh "tar -cvzf #{PACKAGE} #{SOURCES.to_a.reject { |f| File.directory?(f) }.quoted.join(' ')}"
+desc "Sign the deployment package"
+file PACKAGE_SIGN => PACKAGE_FILE do
+	sh "openssl dgst -sha256 -sign #{ENV['HOME']}/.ssh/id_rsa -out #{PACKAGE_SIGN} #{PACKAGE_FILE}"
+end
+
+desc "Create the deployment package"
+file PACKAGE_FILE => SOURCES do
+	sh "tar -cvzf #{PACKAGE_FILE} #{SOURCES.to_a.reject { |f| File.directory?(f) }.quoted.join(' ')}"
 end
 
 namespace :target do
 
 	desc "Test the target system"
 	task :test do
-		ssh "cd ~/solo && rake spec".quoted
+		ssh "cd #{TARGET_DIR} && rake spec".quoted
 	end
 
 	desc "Take a screenshot and copy back"
@@ -79,13 +86,13 @@ namespace :target do
 		shots = Dir['screenshot*.png']
 		shot = (shots.sort.pop || 'screenshot00.png').pathmap('%n').succ + '.png'
 		ssh "DISPLAY=:0 scrot /tmp/#{shot}"
-		sh "scp pi@#{TARGET_IP}:/tmp/#{shot} ./#{shot}"
+		sh "scp #{TARGET}:/tmp/#{shot} ./#{shot}"
 		ssh "rm /tmp/#{shot}"
 	end
 
 	desc "Wipe the target system"
 	task :wipe do
-		ssh "rm -r ~/solo"
+		ssh "rm -r #{TARGET_DIR}"
 	end
 
 	desc "Relaunch the app on the target system"
@@ -108,7 +115,10 @@ end # namespace :target
 namespace :prep do
 
 	desc "Prepare the target Raspberry Pi from Jessie Lite"
-	task :lite => [ :cleanup, :update, :network, :wpa_us, :ntp, :"tz:pacific", :ntfs, :ruby, :xwindows, :fonts, :wm, :midori, :app_folders, :enable_auto_launch, :boot_screen ]
+	task :lite => [ :cleanup, :update, :network, :wpa_us, :ntp, :"tz:pacific", :ntfs, :ruby, :xwindows, :fonts, :wm, :midori, :omxplayer, :app_folders, :enable_auto_launch, :boot_screen ]
+
+	desc "Prepare the target Raspberry Pi from Jessie (Full)"
+	task :lite => [ :cleanup, :update, :network, :wpa_us, :ntp, :"tz:pacific", :ntfs, :wm, :midori, :omxplayer, :app_folders, :enable_auto_launch, :boot_screen ]
 
 	desc "Disable unneeded features"
 	task :cleanup do
@@ -183,15 +193,20 @@ namespace :prep do
 		ssh "sudo apt-get -y install midori"
 	end
 
+	desc "Install minimal audio/video player (omxplayer)"
+	task :omxplayer do
+		ssh "sudo apt-get -y install omxplayer"
+	end
+
 	desc "Prepare subfolders for the application installation"
 	task :app_folders do
 		ssh "sudo mkdir -p /var/log/solo"
-		ssh "sudo chown pi:pi /var/log/solo"
+		ssh "sudo chown #{TARGET_USER}:#{TARGET_USER} /var/log/solo"
 	end
 
-	desc "Set up the pi user to auto-launch the app"
+	desc "Set up TARGET_USER to auto-launch the app"
 	task :enable_auto_launch do
-		ssh "echo . /home/pi/solo/bin/run.sh >> /home/pi/.profile".quoted
+		ssh "echo . #{TARGET_DIR}/bin/run.sh >> ~/.profile".quoted
 	end
 
 	desc "Configure boot behavior"
