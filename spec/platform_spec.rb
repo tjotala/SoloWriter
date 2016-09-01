@@ -2,49 +2,48 @@ require 'spec_helper'
 
 describe Platform do
 	context "should define path" do
+		before(:each) do
+			FakeFS.deactivate!
+		end
+
+		after(:each) do
+			FakeFS.activate!
+		end
+
 		context "BIN_PATH" do
 			it "should be readable" do
-				FakeFS.deactivate!
 				expect( Dir.exist?(Platform::BIN_PATH) ).to be true
-				FakeFS.activate!
 			end
 		end
 
 		context "PLATFORM_PATH" do
 			it "should be accessible" do
-				FakeFS.deactivate!
 				expect( Platform::PLATFORM_PATH ).to be_a(String)
 				expect( Platform::PLATFORM_PATH ).to be_readable_path
-				FakeFS.activate!
+
 			end
 		end
 
 		context "LOCAL_PATH" do
 			it "should be accessible" do
-				FakeFS.deactivate!
 				expect( Platform::LOCAL_PATH ).to be_a(String)
 				expect( Platform::LOCAL_PATH ).to be_readable_path
 				expect( Platform::LOCAL_PATH ).to be_writable_path
-				FakeFS.activate!
 			end
 		end
 
 		context "USERS_PATH" do
 			it "should be accessible" do
-				FakeFS.deactivate!
 				expect( Platform::USERS_PATH ).to be_a(String)
 				expect( Platform::USERS_PATH ).to be_readable_path
 				expect( Platform::USERS_PATH ).to be_writable_path
-				FakeFS.activate!
 			end
 		end
 
 		context "LOGS_PATH" do
 			it "should be writable" do
-				FakeFS.deactivate!
 				expect( Platform::LOGS_PATH ).to be_a(String)
 				expect( Platform::LOGS_PATH ).to be_writable_path
-				FakeFS.activate!
 			end
 		end
 	end
