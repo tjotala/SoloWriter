@@ -12,4 +12,5 @@ group :test do
 	gem 'rake'
 	gem 'rspec'
  	gem 'fakefs'
+ 	gem 'rack-test'
 end
