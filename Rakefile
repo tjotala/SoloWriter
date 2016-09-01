@@ -62,7 +62,7 @@ task :deploy => :package do
 end
 
 desc "Create the deployment files"
-task :package => [ PACKAGE_FILE, PACKAGE_SIGN ]
+task :package => [ DIST, PACKAGE_FILE, PACKAGE_SIGN ]
 
 desc "Sign the deployment package"
 file PACKAGE_SIGN => PACKAGE_FILE do
@@ -118,7 +118,7 @@ namespace :prep do
 	task :lite => [ :cleanup, :update, :network, :wpa_us, :ntp, :"tz:pacific", :ntfs, :ruby, :xwindows, :fonts, :wm, :midori, :omxplayer, :app_folders, :enable_auto_launch, :boot_screen ]
 
 	desc "Prepare the target Raspberry Pi from Jessie (Full)"
-	task :lite => [ :cleanup, :update, :network, :wpa_us, :ntp, :"tz:pacific", :ntfs, :wm, :midori, :omxplayer, :app_folders, :enable_auto_launch, :boot_screen ]
+	task :full => [ :cleanup, :update, :network, :wpa_us, :ntp, :"tz:pacific", :ntfs, :wm, :midori, :omxplayer, :app_folders, :enable_auto_launch, :boot_screen ]
 
 	desc "Disable unneeded features"
 	task :cleanup do

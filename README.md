@@ -60,10 +60,16 @@ I recommend at a minimum the following settings:
 	Internationalization Options: Change Keyboard Layout
 	Internationalization Options: Change WiFi Country
 
+After you finish with raspi-config, it'll ask if you'd like to reboot. Say yes. Ignore the bash warning about a missing script - that's next step.
+
 8. On the *host*
 
 Deploy the software to the Raspberry Pi, and run the tests:
 
 	rake TARGET_IP=<ip_address> deploy target:test
 
-This may take a while for the first time, as it downloads and installs several Ruby gems to the system.
+Grab another beverage, as this may take a while for the first time since it downloads and installs several Ruby gems to the system.
+
+9. On the *target*
+
+Reboot the *target* to launch into the newly installed application.
