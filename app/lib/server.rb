@@ -1,3 +1,7 @@
+require 'rubygems'
+require 'bundler/setup'
+require 'sinatra/base'
+require 'sinatra/json'
 require 'json'
 require 'mail'
 
@@ -194,6 +198,7 @@ class SoloServer < Sinatra::Base
 	# @return 200 ok
 	#
 	get '/api/ping' do
+		content_type :text
 		'ok'
 	end
 
@@ -205,7 +210,7 @@ class SoloServer < Sinatra::Base
 	#
 	post '/api/quit' do
 		Thread.new do
-			sleep(2)
+			Kernel::sleep(2)
 			Platform::quit
 		end
 		status 204
@@ -219,7 +224,7 @@ class SoloServer < Sinatra::Base
 	#
 	post '/api/shutdown' do
 		Thread.new do
-			sleep(2)
+			Kernel::sleep(2)
 			Platform::shutdown
 		end
 		status 204
