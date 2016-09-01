@@ -1,3 +1,5 @@
+require 'digest'
+
 require 'errors'
 
 class RemovableVolume < Volume
@@ -17,7 +19,7 @@ class RemovableVolume < Volume
 		def parse(drive)
 			path = drive.Path.to_s
 			{
-				id: drive.SerialNumber.to_s,
+				id: encode_id(drive.SerialNumber),
 				interface: get_interface(path),
 				name: drive.Path.to_s,
 				label: drive.VolumeName.to_s,
@@ -49,7 +51,7 @@ class RemovableVolume < Volume
 				begin
 					next unless drive.IsReady
 					next unless drive.DriveType == 1 # only accept removable drives
-					return parse(drive) if id == drive.SerialNumber.to_s
+					return parse(drive) if id == encode_id(drive.SerialNumber)
 				rescue WIN32OLERuntimeError
 					# ignore drives that we can't fully resolve?!?
 				end
@@ -74,6 +76,10 @@ class RemovableVolume < Volume
 		def get_available_space(path)
 			fso = WIN32OLE.new('Scripting.FileSystemObject')
 			fso.GetDrive(fso.GetDriveName(path)).AvailableSpace.to_i
+		end
+
+		def encode_id(id)
+			Digest::MD5.hexdigest(id.to_s)
 		end
 	end
 end
