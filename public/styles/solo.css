@@ -90,6 +90,11 @@ html {
 	margin: auto;
 }
 
+/* hide the slideshow indicators since we don't have any user input */
+.carousel-control, .carousel-indicators {
+	display: none;
+}
+
 table.net_addresses td.net_label {
 	padding-right: 1em;
 	font-weight: bold;
