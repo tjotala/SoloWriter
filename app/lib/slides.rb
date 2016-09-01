@@ -1,3 +1,5 @@
+require 'uri'
+
 require 'errors'
 
 class Slide
@@ -33,7 +35,7 @@ class Slide
 	end
 
 	def url
-		"#{@set.url}/images/#{@name}"
+		"#{@set.url}/images/#{URI.encode(@name)}"
 	end
 
 	def path
@@ -62,7 +64,7 @@ class SlideSet
 	end
 
 	def images
-		Dir[File.join(path, '*.{jpg,jpeg,gif,png}')].map { |file| Slide.new(self, File.basename(file)) }
+		Dir.glob(File.join(path, '*.{jpg,jpeg,gif,png}'), File::FNM_CASEFOLD).map { |file| Slide.new(self, File.basename(file)) }
 	end
 
 	def count
@@ -78,7 +80,7 @@ class SlideSet
 	end
 
 	def url
-		"/api/volumes/#{@volume.id}/slides/#{@set}"
+		"/api/volumes/#{@volume.id}/slides/#{URI.encode(@set)}"
 	end
 
 	def path
@@ -116,7 +118,7 @@ class SlideSetList
 	class << self
 		def create(*volumes)
 			sets = volumes.map do |vol|
-				Dir[File.join(vol.path, 'slides', '*')].map { |dir| SlideSet.new(vol, File.basename(dir)) }
+				Dir.glob(File.join(vol.path, 'slides', '*'), File::FNM_CASEFOLD).map { |dir| SlideSet.new(vol, File.basename(dir)) }
 			end.flatten
 			SlideSetList.new(sets)
 		end
