@@ -10,6 +10,8 @@ class Volume
 	attr_reader :total_space
 	attr_reader :available_space
 
+	ANY = 'any'.freeze
+
 	def initialize(opts = { })
 		update(opts)
 	end

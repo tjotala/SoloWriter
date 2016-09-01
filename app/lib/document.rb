@@ -1,5 +1,7 @@
 require 'fileutils'
 
+require 'errors'
+
 class Document
 	attr_reader :path
 

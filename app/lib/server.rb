@@ -11,8 +11,6 @@ require 'password'
 require 'slides'
 
 class SoloServer < Sinatra::Base
-	ANY_VOLUME_ID = 'any'.freeze
-
 	configure do
 		set :root, Platform::ROOT_PATH
 		set :public_folder, Platform::PUBLIC_PATH
@@ -484,7 +482,7 @@ class SoloServer < Sinatra::Base
 	#
 	get '/api/volumes/:volume_id/slides/?' do
 		volume_id = params[:volume_id]
-		volumes = (volume_id == ANY_VOLUME_ID) ? settings.volumes.list : volume_from_id(volume_id)
+		volumes = (volume_id == Volume::ANY) ? settings.volumes.list : volume_from_id(volume_id)
 		json SlideSetList.create(*volumes)
 	end
 
@@ -499,7 +497,7 @@ class SoloServer < Sinatra::Base
 	get '/api/volumes/:volume_id/slides/:set_id/?' do
 		volume_id = params[:volume_id]
 		set_id = params[:set_id]
-		volumes = (volume_id == ANY_VOLUME_ID) ? settings.volumes.list : volume_from_id(volume_id)
+		volumes = (volume_id == Volume::ANY) ? settings.volumes.list : volume_from_id(volume_id)
 		json SlideSetList.create(*volumes)[set_id]
 	end
 
@@ -514,7 +512,7 @@ class SoloServer < Sinatra::Base
 	get '/api/volumes/:volume_id/slides/:set_id/images/?' do
 		volume_id = params[:volume_id]
 		set_id = params[:set_id]
-		volumes = (volume_id == ANY_VOLUME_ID) ? settings.volumes.list : volume_from_id(volume_id)
+		volumes = (volume_id == Volume::ANY) ? settings.volumes.list : volume_from_id(volume_id)
 		json SlideSetList.create(*volumes)[set_id].images.shuffle
 	end
 
@@ -530,7 +528,7 @@ class SoloServer < Sinatra::Base
 	get '/api/volumes/:volume_id/slides/:set_id/images/:filename' do
 		volume_id = params[:volume_id]
 		set_id = params[:set_id]
-		volumes = (volume_id == ANY_VOLUME_ID) ? settings.volumes.list : volume_from_id(volume_id)
+		volumes = (volume_id == Volume::ANY) ? settings.volumes.list : volume_from_id(volume_id)
 		image = SlideSetList.create(*volumes)[set_id].image(params[:filename])
 		cache_control :public, :max_age => 60 * 60
 		send_file(image.path, :type => image.type)

@@ -1,5 +1,7 @@
 require 'promise'
 
+require 'volume'
+
 class LocalVolume < Volume
 	ID = 'local'.freeze
 

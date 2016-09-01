@@ -1,4 +1,5 @@
 require 'errors'
+require 'volume'
 
 class CloudVolume < Volume
 	INTERFACE = 'network'.freeze

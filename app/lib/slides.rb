@@ -93,6 +93,10 @@ class SlideSetList
 		@sets.to_json(args)
 	end
 
+	def count
+		@sets.length
+	end
+
 	def images
 		@sets.map { |set| set.images }.flatten
 	end
