@@ -10,12 +10,11 @@ class RemovableVolume < Volume
 
 	def unmount
 		Platform::run("sudo umount UUID=#{@id}")
-		Platform::run("sudo rmdir #{base_path}")
 		update(self.class.get(@id))
 	end
 
 	def base_path
-		"/media/usb"
+		"/media/#{@id}"
 	end
 
 	class << self

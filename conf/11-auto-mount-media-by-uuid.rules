@@ -1,0 +1,22 @@
+KERNEL!="sd[a-z][0-9]", GOTO="media_by_uuid_auto_mount_end"
+
+# Import FS information
+IMPORT{program}="/sbin/blkid -o udev -p %N"
+
+# Use the UUID of the filesystem as the mount point
+# This ensures uniqueness across multiple devices
+ENV{ID_FS_UUID}!="", ENV{dir_name}="%E{ID_FS_UUID}"
+ENV{ID_FS_UUID}=="", ENV{dir_name}="usb-%k"
+
+# Mount options
+ACTION=="add", ENV{mount_options}="uid=pi,gid=pi,rw,noatime,nodiratime,noexec,sync,dirsync,flush"
+ACTION=="add", ENV{ID_FS_TYPE}=="vfat|ntfs", ENV{mount_options}="$env{mount_options},utf8,umask=002"
+
+# Mount the device
+ACTION=="add", RUN+="/bin/mkdir -p /media/%E{dir_name}", RUN+="/bin/mount -o $env{mount_options} /dev/%k /media/%E{dir_name}"
+
+# Clean up after removal
+ACTION=="remove", ENV{dir_name}!="", RUN+="/bin/umount -l /media/%E{dir_name}", RUN+="/bin/rmdir /media/%E{dir_name}"
+
+# Exit
+LABEL="media_by_uuid_auto_mount_end"
