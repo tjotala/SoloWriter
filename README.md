@@ -30,8 +30,9 @@ Power on. Once it finishes booting up, note the IP address on the display.
 
 5. On the *host*
 
-Copy your SSH key to the *target* to make the subsequent steps easier:
+Copy your SSH key to the *target* to make the subsequent steps easier. Note that on a Mac OS X machine, you may need to install the tool first.
 
+	brew install ssh-copy-id
 	ssh-copy-id pi@<ip_address>
 
 You will be prompted for the password. Enter the default password *raspberry*.
